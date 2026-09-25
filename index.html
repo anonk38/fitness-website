@@ -1,0 +1,2136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitPulse - Pro Edition</title>
+<link rel="manifest" href="/manifest.json">
+<script>if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js'); }</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Barcode Scanner Library -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<style>
+:root {
+--bg-color: #0b0f0c;
+--card-bg: rgba(22, 27, 24, 0.65);
+--text-main: #e2e8f0;
+--text-muted: #94a3b8;
+--primary: #84cc16;
+--primary-dark: #65a30d;
+--danger: #ef4444;
+--border: rgba(132, 204, 22, 0.2);
+--header-bg: rgba(18, 20, 19, 0.95);
+--input-bg: rgba(0, 0, 0, 0.35);
+--blur: blur(16px);
+--chart-grid: rgba(255,255,255,0.05);
+--modal-bg: rgba(0,0,0,0.85);
+--badge-bg: rgba(132, 204, 22, 0.15);
+}
+body.light-mode {
+--bg-color: #f1f5f9;
+--card-bg: rgba(255, 255, 255, 0.75);
+--text-main: #1e293b;
+--text-muted: #64748b;
+--primary: #65a30d;
+--primary-dark: #4d7c0f;
+--danger: #ef4444;
+--border: rgba(100, 116, 139, 0.2);
+--header-bg: rgba(255, 255, 255, 0.95);
+--input-bg: rgba(255, 255, 255, 0.8);
+--chart-grid: rgba(0,0,0,0.05);
+--modal-bg: rgba(255,255,255,0.9);
+--badge-bg: rgba(101, 163, 13, 0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+body { background: var(--bg-color); color: var(--text-main); padding-bottom: 40px; min-height: 100vh; background-image: radial-gradient(circle at top right, rgba(132, 204, 22, 0.08), transparent 45%); transition: background-color 0.4s, color 0.4s; overflow-x: hidden; }
+.glass { background: var(--card-bg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 20px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25); transition: all 0.3s ease; }
+.header { background: var(--header-bg); backdrop-filter: var(--blur); padding: 12px 15px; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--border); }
+.header-top { display: flex; justify-content: space-between; align-items: center; max-width: 600px; margin: 0 auto 10px auto; }
+.date-nav { display: flex; justify-content: center; align-items: center; gap: 15px; max-width: 600px; margin: 0 auto; }
+.date-btn { background: var(--badge-bg); border: 1px solid var(--border); color: var(--primary); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; transition: 0.2s; user-select: none; }
+.date-btn:active { transform: scale(0.9); background: var(--primary); color: #000; }
+.top-btns { display: flex; gap: 8px; }
+.theme-toggle-btn, .lang-toggle-btn { background: var(--badge-bg); border: 1px solid var(--primary); color: var(--primary); padding: 5px 12px; border-radius: 20px; cursor: pointer; font-size: 0.75rem; font-weight: bold; display: flex; align-items: center; gap: 4px; transition: 0.2s; }
+.container { max-width: 600px; margin: 20px auto; padding: 0 15px; display: flex; flex-direction: column; gap: 20px; }
+.card { padding: 20px; }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.card-title { font-size: 1.05rem; font-weight: 700; color: var(--text-main); }
+.progress-bar-bg { width: 100%; height: 8px; background: var(--border); border-radius: 4px; margin-top: 6px; overflow: hidden; margin-bottom: 15px; }
+.progress-bar-fill { height: 100%; background: #3b82f6; width: 0%; transition: width 0.4s ease; }
+.metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.metric-item { background: var(--input-bg); padding: 12px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
+.metric-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.metric-value { font-size: 1.15rem; font-weight: 700; color: var(--primary); margin-top: 4px; }
+.badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: var(--badge-bg); color: var(--primary); margin-top: 4px; }
+
+/* মিল সেকশন কার্ড ডিজাইন */
+.meal-section { background: var(--input-bg); border: 1px solid var(--border); border-radius: 16px; padding: 14px; margin-bottom: 16px; transition: 0.2s; }
+.meal-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+.meal-title-text { font-weight: 700; font-size: 1rem; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+.btn-add-meal { background: var(--primary); color: #000; border: none; padding: 6px 12px; border-radius: 10px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: 0.2s; }
+.btn-add-meal:active { transform: scale(0.95); }
+
+.food-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--border); animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+.food-item:last-of-type { border-bottom: none; }
+.food-details { color: var(--text-muted); font-size: 0.85rem; margin-top: 3px; }
+.delete-btn { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 4px 10px; cursor: pointer; transition: 0.2s; }
+.btn-outline { border: 1px dashed var(--primary); color: var(--primary); background: transparent; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: 600; margin-bottom: 15px; }
+input, select { padding: 12px; border: 1px solid var(--border); border-radius: 12px; width: 100%; margin-bottom: 12px; background: var(--input-bg); color: var(--text-main); outline: none; transition: 0.3s; font-size: 0.95rem; }
+select option { background-color: #161b18; color: #e2e8f0; padding: 10px; }
+::-webkit-calendar-picker-indicator { filter: invert(0.8); cursor: pointer; }
+body.light-mode ::-webkit-calendar-picker-indicator { filter: none; }
+input:focus, select:focus { border-color: var(--primary); }
+.btn-primary { background: var(--primary); color: #fff; border: none; padding: 12px; width: 100%; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; }
+body:not(.light-mode) .btn-primary { color: #000; }
+.flex-row { display: flex; gap: 15px; }
+.flex-row > div { flex: 1; }
+
+#authScreen { position: fixed; inset: 0; background: #080a09; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; overflow: hidden; }
+body.light-mode #authScreen { background: #e2e8f0; }
+.liquid-bg-wrap { position: absolute; inset: 0; overflow: hidden; z-index: 1; pointer-events: none; }
+.blob { position: absolute; border-radius: 50%; filter: blur(55px); opacity: 0.65; animation: floatBlobs 18s infinite alternate ease-in-out; }
+.blob-1 { width: 380px; height: 380px; background: radial-gradient(circle, #84cc16 0%, #166534 80%); top: -80px; left: -80px; }
+.blob-2 { width: 340px; height: 340px; background: radial-gradient(circle, #0284c7 0%, #0f766e 80%); bottom: -60px; right: -60px; animation-duration: 22s; animation-delay: -5s; }
+.blob-3 { width: 220px; height: 220px; background: radial-gradient(circle, #22c55e 0%, #064e3b 80%); top: 45%; left: 60%; animation-duration: 14s; animation-delay: -8s; }
+.floating-orb { position: absolute; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4), rgba(132, 204, 22, 0.2) 60%, transparent); box-shadow: inset -5px -5px 15px rgba(0,0,0,0.4), 0 10px 25px rgba(0,0,0,0.3); backdrop-filter: blur(4px); }
+.orb-1 { width: 70px; height: 70px; top: 18%; right: 15%; animation: floatOrb 8s infinite alternate ease-in-out; }
+.orb-2 { width: 50px; height: 50px; bottom: 22%; left: 12%; animation: floatOrb 10s infinite alternate-reverse ease-in-out; }
+
+@keyframes floatBlobs { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(60px, 40px) scale(1.1); } 100% { transform: translate(-30px, 60px) scale(0.95); } }
+@keyframes floatOrb { 0% { transform: translateY(0px); } 100% { transform: translateY(-25px); } }
+
+.auth-box { width: 100%; max-width: 400px; padding: 35px 28px; text-align: center; position: relative; z-index: 10; background: rgba(18, 24, 20, 0.55); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); border: 1px solid rgba(255, 255, 255, 0.12); border-top: 1px solid rgba(255, 255, 255, 0.25); border-left: 1px solid rgba(255, 255, 255, 0.25); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45); }
+body.light-mode .auth-box { background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(255, 255, 255, 0.6); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1); }
+.auth-logo { font-size: 2.3rem; color: var(--primary); font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; }
+
+.modal { display: none; position: fixed; inset: 0; background: var(--modal-bg); backdrop-filter: blur(8px); align-items: center; justify-content: center; z-index: 99; padding: 20px; }
+.modal-content { width: 100%; max-width: 440px; padding: 25px; max-height: 90vh; overflow-y: auto; }
+.close-modal { float: right; cursor: pointer; font-size: 1.4rem; color: var(--danger); font-weight: bold; }
+.doughnut-container { width: 130px; height: 130px; margin: 0 auto; position: relative; }
+.doughnut-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; line-height: 1.2; }
+.doughnut-text span { display: block; font-size: 0.75rem; color: var(--text-muted); }
+.doughnut-text strong { font-size: 1.25rem; font-weight: 800; }
+.footer-credit { text-align: center; font-size: 0.8rem; color: var(--text-muted); margin-top: 20px; letter-spacing: 0.5px; }
+.footer-credit a { color: var(--primary); text-decoration: none; font-weight: bold; transition: opacity 0.2s; }
+.footer-credit a:hover { text-decoration: underline; opacity: 0.85; }
+
+.workout-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; }
+.workout-check { width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; }
+.meal-rec-box { margin-top: 15px; padding: 12px; background: var(--input-bg); border: 1px dashed var(--border); border-radius: 12px; font-size: 0.82rem; line-height: 1.45; }
+
+.camera-scanner-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  height: 300px;
+  margin: 0 auto;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2px solid var(--primary);
+  background: #000;
+}
+#reader { width: 100%; height: 100%; }
+#reader video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 16px;
+  transition: transform 0.15s ease-out;
+}
+.scanner-laser {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #ef4444;
+  box-shadow: 0 0 15px 4px rgba(239, 68, 68, 0.7);
+  animation: scanLaser 2.5s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 50;
+  display: none;
+}
+@keyframes scanLaser {
+  0% { transform: translateY(-130px); opacity: 0; }
+  10% { opacity: 1; }
+  50% { transform: translateY(130px); }
+  90% { opacity: 1; }
+  100% { transform: translateY(-130px); opacity: 0; }
+}
+
+.zoom-controls-wrapper {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--input-bg);
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.zoom-presets {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+.zoom-btn {
+  background: var(--badge-bg);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  padding: 5px 12px;
+  border-radius: 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.zoom-btn:hover, .zoom-btn.active {
+  background: var(--primary);
+  color: #000;
+  border-color: var(--primary);
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+</style>
+</head>
+<body>
+<div id="authScreen">
+<div class="liquid-bg-wrap">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="floating-orb orb-1"></div>
+  <div class="floating-orb orb-2"></div>
+</div>
+
+<div class="top-btns" style="position: absolute; right: 15px; top: 15px; z-index: 20;">
+<button class="lang-toggle-btn" onclick="toggleLanguage()" id="authLangBtn">A/অ</button>
+<button class="theme-toggle-btn" onclick="toggleTheme()" id="authThemeBtn">🌙</button>
+</div>
+
+<div class="glass auth-box">
+<div class="auth-logo">FitPulse</div>
+<p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.92rem;" data-i18n="app_subtitle">ফিটনেস, ডায়েট ও বিএমআই ট্র্যাকার</p>
+
+<div id="loginFormView">
+<input type="text" id="loginUsername" placeholder="Username" autocomplete="off">
+<input type="password" id="loginPassword" placeholder="Password">
+<button class="btn-primary" id="loginBtn" onclick="login()" data-i18n="login_btn">লগইন করুন</button>
+<div style="margin-top: 15px; font-size: 0.9rem; color: var(--primary); cursor: pointer; font-weight: 600;" onclick="switchAuthMode('register')" data-i18n="to_register_link">নতুন অ্যাকাউন্ট তৈরি করুন</div>
+<div style="margin-top: 10px; font-size: 0.9rem; color: var(--text-muted); cursor: pointer;" onclick="switchAuthMode('reset')" data-i18n="forgot_pass_btn">পাসওয়ার্ড ভুলে গেছেন?</div>
+</div>
+
+<div id="registerFormView" style="display: none;">
+<input type="text" id="regUsername" placeholder="Username" autocomplete="off">
+<input type="password" id="regPassword" placeholder="Password">
+<button class="btn-primary" id="regBtn" onclick="registerAndLogin()" data-i18n="register_and_login_btn">অ্যাকাউন্ট তৈরি ও লগইন করুন</button>
+<div style="margin-top: 15px; font-size: 0.9rem; color: var(--primary); cursor: pointer; font-weight: 600;" onclick="switchAuthMode('login')" data-i18n="to_login_link">আগে থেকেই অ্যাকাউন্ট আছে? লগইন করুন</div>
+</div>
+
+<div id="resetSection" style="display: none;">
+<h3 style="margin-bottom: 15px; color: var(--primary);" data-i18n="reset_pass_title">রিসেট পাসওয়ার্ড</h3>
+<input type="text" id="resetUsername" placeholder="Enter Username" autocomplete="off">
+<input type="password" id="resetPassword" placeholder="Enter New Password">
+<button class="btn-primary" onclick="resetPass()" data-i18n="change_pass_btn">পাসওয়ার্ড পরিবর্তন করুন</button>
+<div style="margin-top: 15px; font-size: 0.9rem; color: var(--text-muted); cursor: pointer;" onclick="switchAuthMode('login')" data-i18n="back_to_login">⬅ ফিরে যান</div>
+</div>
+
+<div id="authMsg" style="margin-top: 15px; color: var(--danger); font-size: 0.9rem; font-weight: 500;"></div>
+
+<div class="footer-credit" style="margin-top: 25px;">Developed by ❤️ <a href="https://www.facebook.com/anonk3814" target="_blank" rel="noopener noreferrer">Anon Khan</a></div>
+</div>
+</div>
+
+<div id="mainApp" style="display: none;">
+<div class="header">
+<div class="header-top">
+<div style="font-size: 0.85rem; color: var(--text-muted);">
+<span data-i18n="user_label">ইউজার: </span> <b id="currentUserDisp" style="color:var(--primary);"></b> | <span style="cursor: pointer; color: var(--danger);" onclick="logout()" data-i18n="logout_btn">লগআউট</span>
+</div>
+<div class="top-btns">
+<button class="lang-toggle-btn" onclick="toggleLanguage()" id="mainLangBtn">A/অ</button>
+<button class="theme-toggle-btn" onclick="toggleTheme()" id="mainThemeBtn">🌙</button>
+</div>
+</div>
+<div class="date-nav">
+<button class="date-btn" onclick="changeDate(-1)">&#8249;</button>
+<span id="displayDate" style="font-size: 1.1rem; font-weight: 700; min-width: 140px; text-align: center;"></span>
+<button class="date-btn" onclick="changeDate(1)">&#8250;</button>
+</div>
+</div>
+<div class="container">
+<div class="glass card">
+<div class="card-header">
+<span class="card-title" data-i18n="daily_summary"> ডেইলি সামারি</span>
+<span style="font-size: 0.85rem; color: var(--primary); cursor: pointer; font-weight: 600;" onclick="openProfileModal()" data-i18n="profile_update"> প্রোফাইল ও লক্ষ্য আপডেট</span>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+<div style="flex: 1; text-align: left;">
+<div style="font-size: 0.8rem; color: var(--text-muted);" data-i18n="target_kcal">টার্গেট (kcal)</div>
+<div style="font-size: 1.4rem; font-weight: 700; color: var(--primary);" id="sumTarget">1704</div>
+<div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px;" data-i18n="burned_kcal">পোড়ানো (ব্যায়াম)</div>
+<div style="font-size: 1.2rem; font-weight: 700; color: #f97316;" id="sumBurned">0</div>
+</div>
+<div class="doughnut-container">
+<canvas id="macroChart"></canvas>
+<div class="doughnut-text">
+<strong id="sumRemainingDoughnut" style="color: var(--primary);">0</strong>
+<span data-i18n="remaining">অবশিষ্ট</span>
+</div>
+</div>
+<div style="flex: 1; text-align: right;">
+<div style="font-size: 0.8rem; color: var(--text-muted);" data-i18n="food_eaten">খাবার (kcal)</div>
+<div style="font-size: 1.4rem; font-weight: 700; color: #f59e0b;" id="sumFood">0</div>
+</div>
+</div>
+
+<div style="margin-top: 35px;">
+<div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+<span data-i18n="protein_label">প্রোটিন (Protein)</span>
+<span id="proteinText" style="font-weight: 600; color: #38bdf8;">0g/120g</span>
+</div>
+<div class="progress-bar-bg">
+<div class="progress-bar-fill" id="proteinBar" style="background: #38bdf8;"></div>
+</div>
+</div>
+
+<div>
+<div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+<span data-i18n="fat_label">ফ্যাট (Fat)</span>
+<span id="fatText" style="font-weight: 600; color: #ef4444;">0g/47g</span>
+</div>
+<div class="progress-bar-bg">
+<div class="progress-bar-fill" id="fatBar" style="background: #ef4444;"></div>
+</div>
+</div>
+
+<div>
+<div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+<span data-i18n="sugar_label">চিনি / সুগার (Max Limit)</span>
+<span id="sugarText" style="font-weight: 600; color: #ec4899;">0g/36g</span>
+</div>
+<div class="progress-bar-bg">
+<div class="progress-bar-fill" id="sugarBar" style="background: #ec4899;"></div>
+</div>
+</div>
+
+<div id="mealRecContainer" class="meal-rec-box"></div>
+</div>
+
+<div class="glass card">
+<div class="card-header">
+<span class="card-title" data-i18n="body_analyzer">⚖️ বডি অ্যানালাইজার</span>
+<span class="badge" id="bmiStatusBadge"></span>
+</div>
+<div class="metric-grid">
+<div class="metric-item">
+<div class="metric-label" data-i18n="bmi_label">বডি মাস ইনডেক্স (BMI)</div>
+<div class="metric-value" id="bmiValue">00.0</div>
+</div>
+<div class="metric-item">
+<div class="metric-label" data-i18n="bmr_label">বেসাল মেটাবলিজম (BMR)</div>
+<div class="metric-value" id="bmrValue">00 <span style="font-size:0.8rem; font-weight:normal;">kcal</span></div>
+</div>
+<div class="metric-item">
+<div class="metric-label" data-i18n="ideal_weight_label">আদর্শ ওজন (Ideal)</div>
+<div class="metric-value" id="idealWeightValue" style="color:#38bdf8;">00-00 kg</div>
+</div>
+<div class="metric-item">
+<div class="metric-label" data-i18n="target_weight_label">টার্গেট ওজন (Target)</div>
+<div class="metric-value" id="targetWeightValue" style="color:#f59e0b;">00 kg</div>
+</div>
+</div>
+<div style="margin-top: 12px; font-size: 0.82rem; color: var(--text-muted); text-align: center;" id="healthAdviceText"></div>
+</div>
+
+<div class="flex-row">
+<div class="glass card">
+<span class="card-title" style="font-size: 0.9rem;" data-i18n="weight_kg">ওজন (কেজি)</span>
+<div style="display: flex; gap: 10px; margin-top: 10px;">
+<input type="number" id="weightInput" placeholder="89" step="0.1" style="margin: 0;">
+<button class="btn-primary" style="width: auto; padding: 0 15px;" onclick="saveWeightManually()" data-i18n="save_btn">সেভ</button>
+</div>
+</div>
+<div class="glass card">
+<div style="display: flex; justify-content: space-between; align-items: center;">
+<span class="card-title" style="font-size: 0.9rem;" data-i18n="water_I">পানি (L)</span>
+<span id="waterTargetInfo" style="font-size: 0.75rem; color: var(--text-muted);">টার্গেট: 3.5L</span>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px;">
+<div>
+<span id="waterDisp" style="font-weight: bold; font-size: 1.4rem; color: #38bdf8;">0.0</span> <span style="font-size: 0.8rem; color: var(--text-muted);">L</span>
+<div id="waterDiffInfo" style="font-size: 0.75rem; color: var(--primary); margin-top: 2px;">বাকি: 3.5L</div>
+</div>
+<div style="display: flex; gap: 6px;">
+<button class="btn-primary" style="width: 38px; height: 38px; padding: 0; background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); font-size: 1.3rem; display: flex; align-items: center; justify-content: center;" onclick="removeWater()">−</button>
+<button class="btn-primary" style="width: 38px; height: 38px; padding: 0; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 1.3rem; display: flex; align-items: center; justify-content: center;" onclick="addWater()">+</button>
+</div>
+</div>
+</div>
+</div>
+
+<div class="glass card" id="diaryContainer"></div>
+
+<div class="glass card">
+<div class="card-header" style="margin-bottom: 10px;">
+<span class="card-title" style="font-size: 1rem;" data-i18n="exercise_title">🏃‍♂️ ব্যায়াম ও ক্যালোরি বার্ন</span>
+<span class="badge" id="workoutGoalBadge" style="background: rgba(249, 115, 22, 0.15); color: #f97316;"></span>
+</div>
+<div id="smartWorkoutContainer" style="margin-bottom: 15px;"></div>
+<div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;" data-i18n="manual_burn_label">অথবা নিজে ক্যালোরি যোগ করুন:</div>
+<div style="display: flex; gap: 10px;">
+<input type="number" id="burnedInput" placeholder="ex: 250 (kcal)" style="margin: 0;">
+<button class="btn-primary" style="width: auto; padding: 0 15px; background: #f97316;" onclick="saveExercise()" data-i18n="add_btn">অ্যাড</button>
+</div>
+<div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;" data-i18n="exercise_desc">হাঁটা বা জিম করে ক্যালোরি পোড়ালে এখানে লিখুন। </div>
+</div>
+
+<div class="glass card">
+<span class="card-title" style="font-size: 0.95rem;" data-i18n="chart_title"> গত ৭ দিনের ওজন পরিবর্তন</span>
+<div style="height: 160px; margin-top: 10px;">
+<canvas id="weightChart"></canvas>
+</div>
+</div>
+
+<div class="footer-credit">Developed by ❤️ <a href="https://www.facebook.com/anonk3814" target="_blank" rel="noopener noreferrer">Anon Khan</a></div>
+</div>
+</div>
+
+<!-- Profile Modal -->
+<div class="modal" id="profileModal">
+<div class="glass modal-content">
+<span class="close-modal" id="closeProfileBtn" onclick="closeProfileModal()">×</span>
+<h3 style="margin-bottom: 5px; color: var(--primary);" data-i18n="profile_setup"> প্রোফাইল সেটআপ</h3>
+<p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;" data-i18n="profile_desc">আপনার সঠিক তথ্যের ওপর ভিত্তি করে ডায়েট প্ল্যান তৈরি হবে। </p>
+
+<label style="font-size: 0.85rem; color: var(--text-muted);" data-i18n="goal_label">আপনার ফিটনেস লক্ষ্য (Goal)</label>
+<select id="userFitnessGoal">
+<option value="lose" data-i18n="goal_lose">ওজন কমানো / ফ্যাট লস (Lose Weight)</option>
+<option value="gain" data-i18n="goal_gain">ওজন বাড়ানো / মাসল গেইন (Gain Weight)</option>
+<option value="maintain" data-i18n="goal_maintain">ওজন ধরে রাখা (Maintain)</option>
+</select>
+
+<label style="font-size: 0.85rem; color: var(--text-muted);" data-i18n="gender_label">লিঙ্গ (Gender)</label>
+<select id="userGender">
+<option value="male" data-i18n="gender_m">পুরুষ (Male)</option>
+<option value="female" data-i18n="gender_f"> মহিলা (Female)</option>
+</select>
+<label style="font-size: 0.85rem; color: var(--text-muted);" data-i18n="dob_label">জন্মতারিখ (Date of Birth)</label>
+<div style="display: flex; gap: 8px;">
+<input type="number" id="userDobDay" placeholder="দিন (DD)" min="1" max="31">
+<input type="number" id="userDobMonth" placeholder="মাস (MM)" min="1" max="12">
+<input type="number" id="userDobYear" placeholder="সাল (YYYY)" min="1900" max="2100">
+</div>
+<label style="font-size: 0.85rem; color: var(--text-muted);" data-i18n="height_label">উচ্চতা (Feet & Inches)</label>
+<div style="display: flex; gap: 10px;">
+<input type="number" id="userHeightFeet" placeholder="Feet (ex: 5)">
+<input type="number" id="userHeightInches" placeholder="Inches (ex: 5)">
+</div>
+<label style="font-size: 0.85rem; color: var(--text-muted);" data-i18n="curr_weight_label">বর্তমান ওজন (কেজি)</label>
+<input type="number" id="userSetupWeight" placeholder="89" step="0.1">
+<label style="font-size: 0.85rem; color: var(--text-muted);" data-i18n="setup_target_weight">টার্গেট ওজন / লক্ষ্য (কেজি)</label>
+<input type="number" id="userTargetWeight" placeholder="ex: 75" step="0.1">
+<button class="btn-primary" onclick="calculateAndSaveProfile()" data-i18n="auto_calc_btn">অটো ক্যালকুলেট ও সেভ করুন</button>
+
+<hr style="border: 0; border-top: 1px dashed var(--border); margin: 25px 0 15px 0;">
+<h4 style="color: var(--danger); margin-bottom: 10px;" data-i18n="danger_zone">ডেঞ্জার জোন (Danger Zone)</h4>
+<button class="btn-primary" style="background: var(--danger); color: white;" onclick="deleteAccount()" data-i18n="delete_account_btn">অ্যাকাউন্ট ডিলিট করুন</button>
+</div>
+</div>
+
+<!-- Custom / Edit Food Modal -->
+<div class="modal" id="customFoodModal">
+<div class="glass modal-content">
+<span class="close-modal" onclick="closeCustomFoodModal()">×</span>
+<h3 style="margin-bottom: 15px; color: var(--primary);" id="cFoodModalTitle">নতুন খাবার তৈরি করুন</h3>
+<input type="hidden" id="cFoodId">
+
+<label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">বারকোড নম্বর (ঐচ্ছিক / স্ক্যান করা):</label>
+<input type="text" id="cFoodBarcode" placeholder="বারকোড নম্বর">
+
+<label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">খাবারের নাম:</label>
+<input type="text" id="cFoodName" placeholder="যেমন: আলুর চপ">
+
+<input type="text" id="cFoodTags" placeholder="বাংলিশ নাম / ট্যাগ (ঐচ্ছিক / Optional)">
+<input type="number" id="cFoodCal" placeholder="মোট ক্যালোরি (kcal) - যেমন: 150">
+<input type="number" id="cFoodPro" placeholder="মোট প্রোটিন (গ্রাম)" step="0.1">
+<input type="number" id="cFoodCarbs" placeholder="মোট কার্বস (গ্রাম)" step="0.1">
+<input type="number" id="cFoodFat" placeholder="মোট ফ্যাট (গ্রাম)" step="0.1">
+<input type="number" id="cFoodSugar" placeholder="মোট চিনি / সুগার (গ্রাম)" step="0.1">
+<div style="display: flex; gap: 10px;">
+<select id="cFoodUnit" style="margin-bottom: 0;">
+    <option value="গ্রাম">গ্রাম (g)</option>
+    <option value="মিলি">মিলি (ml)</option>
+    <option value="পিস">পিস (Piece)</option>
+    <option value="টি">টি (Item)</option>
+    <option value="কাপ">কাপ (Cup)</option>
+    <option value="বাটি">বাটি (Bowl)</option>
+    <option value="প্লেট">প্লেট (Plate)</option>
+    <option value="স্লাইস">স্লাইস (Slice)</option>
+</select>
+<input type="number" id="cFoodQty" placeholder="পরিমাণ (যেমন: 100/250)" value="1" style="margin-bottom: 0;">
+</div>
+<button class="btn-primary" style="margin-top: 12px;" onclick="saveCustomFood()" data-i18n="save_btn">সেভ</button>
+</div>
+</div>
+
+<!-- Add Food Modal -->
+<div class="modal" id="foodModal">
+<div class="glass modal-content">
+<span class="close-modal" onclick="closeModal()">×</span>
+<h3 style="margin-bottom: 15px; color: var(--primary);" id="modalMealTitle"></h3>
+
+<div style="display: flex; gap: 8px; margin-bottom: 15px;">
+  <button class="btn-outline" style="margin-bottom: 0; flex: 1;" onclick="openCreateNewFoodModal()" data-i18n="create_food_btn">+ নতুন খাবার</button>
+  <button class="btn-outline" style="margin-bottom: 0; flex: 1; border-color: #38bdf8; color: #38bdf8;" onclick="openBarcodeScanner()" data-i18n="barcode_scan_btn">📷 বারকোড স্ক্যান</button>
+</div>
+
+<input type="text" id="foodSearchInput" placeholder="খাবারের নাম লিখে খুঁজুন (bhat, ruti, dim...)" oninput="filterFoodList()">
+<select id="foodSelector" onchange="onFoodSelectChange()"></select>
+
+<!-- এডিট ও ডিলিট অপশন -->
+<div style="display: flex; gap: 8px; margin-bottom: 12px;">
+  <button id="editFoodBtn" class="btn-primary" style="flex: 1; background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #38bdf8; padding: 8px; font-size: 0.85rem;" onclick="editSelectedFood()">✏️ এডিট করুন</button>
+  <button id="deleteFoodBtn" class="btn-primary" style="flex: 1; background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); padding: 8px; font-size: 0.85rem;" onclick="deleteSelectedFood()">🗑️ ডিলিট করুন</button>
+</div>
+
+<label id="qtyLabel" style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 5px;">খাওয়ার পরিমাণ সিলেক্ট করুন:</label>
+<input type="number" id="foodQty" oninput="calcModalLive()">
+<div style="display: flex; justify-content: space-between; background: var(--input-bg); padding: 12px; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--border);">
+<div style="text-align: center;">
+<div style="font-size: 0.75rem; color: var(--text-muted);" data-i18n="calories">ক্যালোরি</div>
+<div id="modalLiveCal" style="font-weight: bold; color: var(--primary); font-size: 1.1rem;">0</div>
+</div>
+<div style="text-align: center;">
+<div style="font-size: 0.75rem; color: var(--text-muted);" data-i18n="protein">প্রোটিন</div>
+<div id="modalLivePro" style="font-weight: bold; color: #38bdf8; font-size: 1.1rem;">0g</div>
+</div>
+<div style="text-align: center;">
+<div style="font-size: 0.75rem; color: var(--text-muted);" data-i18n="carbs_label">কার্বস</div>
+<div id="modalLiveCarbs" style="font-weight: bold; color: #f59e0b; font-size: 1.1rem;">0g</div>
+</div>
+<div style="text-align: center;">
+<div style="font-size: 0.75rem; color: var(--text-muted);" data-i18n="fats_label">ফ্যাট</div>
+<div id="modalLiveFat" style="font-weight: bold; color: #ef4444; font-size: 1.1rem;">0g</div>
+</div>
+<div style="text-align: center;">
+<div style="font-size: 0.75rem; color: var(--text-muted);" data-i18n="sugar_label_short">সুগার</div>
+<div id="modalLiveSugar" style="font-weight: bold; color: #ec4899; font-size: 1.1rem;">0g</div>
+</div>
+</div>
+<button class="btn-primary" onclick="saveFoodLog()" data-i18n="add_to_diary">ডায়েরিতে যোগ করুন</button>
+</div>
+</div>
+
+<!-- 📷 Full-Screen Scanner Modal -->
+<div class="modal" id="barcodeScannerModal">
+<div class="glass modal-content" style="text-align: center;">
+<h3 style="margin-bottom: 12px; color: var(--primary);" data-i18n="scanner_modal_title">📷 প্যাকেট বারকোড স্ক্যানার</h3>
+
+<div class="camera-scanner-wrapper">
+  <div id="reader"></div>
+  <div class="scanner-laser" id="scannerLaser"></div>
+</div>
+
+<!-- Zoom Control Area (Buttons Only) -->
+<div class="zoom-controls-wrapper" id="zoomControlsWrapper">
+  <div class="zoom-presets">
+    <span style="font-size:0.85rem; color:var(--text-muted); align-self: center; margin-right: 5px;">🔍 জুম:</span>
+    <button type="button" class="zoom-btn active" onclick="setZoomPreset(1.0)">1.0x</button>
+    <button type="button" class="zoom-btn" onclick="setZoomPreset(1.5)">1.5x</button>
+    <button type="button" class="zoom-btn" onclick="setZoomPreset(2.0)">2.0x</button>
+    <button type="button" class="zoom-btn" onclick="setZoomPreset(3.0)">3.0x</button>
+  </div>
+</div>
+
+<div id="scanStatus" style="margin-top: 10px; font-size: 0.85rem; color: var(--primary); min-height: 20px;"></div>
+
+<!-- Quick Manual Input Option -->
+<div style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px;">
+    <div style="display: flex; gap: 6px;">
+        <input type="text" id="manualBarcodeNumber" placeholder="বারকোডের টেক্সট/নম্বর লিখুন..." style="margin: 0; font-size: 0.85rem; padding: 10px;">
+        <button class="btn-primary" style="width: auto; padding: 0 15px; font-size: 0.85rem;" onclick="processManualBarcode()" data-i18n="find_btn">খুঁজুন</button>
+    </div>
+</div>
+
+<button class="btn-outline" style="margin-top: 12px;" onclick="safeCloseScanner()" data-i18n="close_btn">বন্ধ করুন</button>
+</div>
+</div>
+
+<script>
+const dict = {
+"bn": {
+"app_subtitle": "ফিটনেস, ডায়েট ও বিএমআই ট্র্যাকার",
+"login_btn": "লগইন করুন",
+"to_register_link": "নতুন অ্যাকাউন্ট তৈরি করুন",
+"to_login_link": "আগে থেকেই অ্যাকাউন্ট আছে? লগইন করুন",
+"register_and_login_btn": "অ্যাকাউন্ট তৈরি ও লগইন করুন",
+"user_label": "ইউজার:",
+"logout_btn": "লগআউট",
+"daily_summary": "ডেইলি সামারি",
+"profile_update": " প্রোফাইল ও লক্ষ্য আপডেট",
+"target_kcal": "টার্গেট (kcal)",
+"food_eaten": "খাবার (kcal)",
+"burned_kcal": "পোড়ানো (ব্যায়াম)",
+"remaining": "অবশিষ্ট",
+"protein_label": "প্রোটিন (Protein)",
+"fat_label": "ফ্যাট (Fat)",
+"sugar_label": "চিনি / সুগার (Max Limit)",
+"sugar_label_short": "সুগার",
+"carbs_label": "কার্বস",
+"fats_label": "ফ্যাট",
+"body_analyzer":"⚖️ বডি অ্যানালাইজার",
+"bmi_label": "বডি মাস ইনডেক্স (BMI)",
+"bmr_label": "বেসাল মেটাবলিজম (BMR)",
+"ideal_weight_label": "আদর্শ ওজন (Ideal)",
+"target_weight_label": "টার্গেট ওজন (Target)",
+"exercise_title": "🏃‍♂️ ব্যায়াম ও ক্যালোরি বার্ন",
+"add_btn": "অ্যাড",
+"find_btn": "খুঁজুন",
+"exercise_desc": "হাঁটা বা জিম করে ক্যালোরি পোড়ালে এখানে লিখুন। ",
+"weight_kg": "ওজন (কেজি)",
+"save_btn": "সেভ",
+"water_I": "পানি (L)",
+"chart_title": " গত ৭ দিনের ওজন পরিবর্তন",
+"profile_setup": " প্রোফাইল সেটআপ",
+"profile_desc": "আপনার সঠিক তথ্যের ওপর ভিত্তি করে ডায়েট প্ল্যান তৈরি হবে।",
+"goal_label": "আপনার ফিটনেস লক্ষ্য (Goal)",
+"goal_lose": "ওজন কমানো / ফ্যাট লস (Lose Weight)",
+"goal_gain": "ওজন বাড়ানো / মাসল গেইন (Gain Weight)",
+"goal_maintain": "ওজন ধরে রাখা (Maintain)",
+"gender_label": "লিঙ্গ (Gender)",
+"gender_m": "পুরুষ (Male)",
+"gender_f": "মহিলা (Female)",
+"dob_label": "জন্মতারিখ (Date of Birth)",
+"height_label": "উচ্চতা (Feet & Inches)",
+"curr_weight_label": "বর্তমান ওজন (কেজি)",
+"setup_target_weight": "টার্গেট ওজন / লক্ষ্য (কেজি)",
+"auto_calc_btn": "অটো ক্যালকুলেট ও সেভ করুন",
+"create_food_btn": "+ নতুন খাবার",
+"create_food_title": "নতুন খাবার তৈরি করুন",
+"barcode_scan_btn": "📷 বারকোড স্ক্যান",
+"scanner_modal_title": "📷 প্যাকেট বারকোড স্ক্যানার",
+"close_btn": "বন্ধ করুন",
+"cam_prep": "ক্যামেরা প্রস্তুত করা হচ্ছে...",
+"cam_guide": "বারকোডটি ক্যামেরার সামনে যেকোনো জায়গায় ধরুন...",
+"cam_err": "ক্যামেরা অন করা যায়নি! পারমিশন দিন।",
+"quantity": "পরিমাণ",
+"calories": "ক্যালোরি",
+"add_to_diary": "ডায়েরিতে যোগ করুন",
+"today_txt": "আজ",
+"meal_1": "সকালের নাস্তা",
+"meal_2": "দুপুরের খাবার",
+"meal_3": "বিকেলের নাস্তা",
+"meal_4": "রাতের খাবার",
+"add_food": "+ খাবার যোগ করুন",
+"bmi_under": "ওজন কম",
+"bmi_norm": "স্বাভাবিক ও আদর্শ",
+"bmi_over": "অতিরিক্ত ওজন",
+"bmi_obese": "স্থূলতা (Obese)",
+"advice_under": "পুষ্টিকর ক্যালোরি সমৃদ্ধ খাবার খেয়ে স্বাস্থ্যকর ওজন অর্জন করুন।",
+"advice_norm": "চমৎকার! আপনার বর্তমান স্বাস্থ্যকর ওজন ও ফিটনেস বজায় রাখুন। ",
+"advice_over": "ফ্যাট লসের জন্য আপনার প্রতিদিনের ক্যালোরি লক্ষ্য মেনে চলুন। ",
+"advice_obese": "ক্যালোরি নিয়ন্ত্রণ ও পর্যাপ্ত প্রোটিন যুক্ত সুষম ডায়েট মেনে চলুন।",
+"forgot_pass_btn": "পাসওয়ার্ড ভুলে গেছেন?",
+"reset_pass_title": "রিসেট পাসওয়ার্ড",
+"change_pass_btn": "পাসওয়ার্ড পরিবর্তন করুন",
+"back_to_login": "⬅ ফিরে যান",
+"danger_zone": "ডেঞ্জার জোন (Danger Zone)",
+"delete_account_btn": "অ্যাকাউন্ট ডিলিট করুন",
+"manual_burn_label": "অথবা নিজে ক্যালোরি যোগ করুন:",
+"err_enter_creds": "দয়া করে ইউজারনেম এবং পাসওয়ার্ড দিন",
+"err_user_exists": "এই ইউজারনেম দিয়ে ইতিমধ্যে অ্যাকাউন্ট আছে!",
+"err_invalid_creds": "ভুল ইউজারনেম অথবা পাসওয়ার্ড!",
+"err_user_not_found": "এই নামে কোনো ইউজার পাওয়া যায়নি!",
+"loading_wait": "অনুগ্রহ করে অপেক্ষা করুন...",
+"err_connection": "সার্ভারে সংযোগ করা যায়নি! ইন্টারনেট চেক করুন।"
+},
+"en": {
+"app_subtitle": "Fitness, Diet & BMI Tracker",
+"login_btn": "Login",
+"to_register_link": "Create New Account",
+"to_login_link": "Already have an account? Login",
+"register_and_login_btn": "Create Account & Login",
+"user_label": "User:",
+"logout_btn": "Logout",
+"daily_summary": "Daily Summary",
+"profile_update": " Profile & Goal Setup",
+"target_kcal": "Target (kcal)",
+"food_eaten": "Food (kcal)",
+"burned_kcal": "Burned (Exercise)",
+"remaining": "Remaining",
+"protein_label": "Protein",
+"fat_label": "Fat",
+"sugar_label": "Sugar (Max Limit)",
+"sugar_label_short": "Sugar",
+"carbs_label": "Carbs",
+"fats_label": "Fat",
+"body_analyzer":"⚖️ Body Analyzer",
+"bmi_label": "Body Mass Index (BMI)",
+"bmr_label": "Basal Metabolism (BMR)",
+"ideal_weight_label": "Ideal Weight",
+"target_weight_label": "Target Weight",
+"exercise_title": "🏃‍♂️ Exercise & Burned Calories",
+"add_btn": "Add",
+"find_btn": "Find",
+"exercise_desc": "Log calories burned from walking or gym.",
+"weight_kg": "Weight (KG)",
+"save_btn": "Save",
+"water_I": "Water (L)",
+"chart_title": " Last 7 Days Weight",
+"profile_setup": " Profile Setup",
+"profile_desc": "Your diet plan will be generated based on these details.",
+"goal_label": "Fitness Goal",
+"goal_lose": "Lose Weight / Fat Loss",
+"goal_gain": "Gain Weight / Muscle Gain",
+"goal_maintain": "Maintain Weight",
+"gender_label": "Gender",
+"gender_m": "Male",
+"gender_f": "Female",
+"dob_label": "Date of Birth",
+"height_label": "Height (Feet & Inches)",
+"curr_weight_label": "Current Weight (KG)",
+"setup_target_weight": "Target Weight (KG)",
+"auto_calc_btn": "Auto Calculate & Save",
+"create_food_btn": "+ New Food",
+"create_food_title": "Create Custom Food",
+"barcode_scan_btn": "📷 Scan Barcode",
+"scanner_modal_title": "📷 Packaged Food Barcode Scanner",
+"close_btn": "Close",
+"cam_prep": "Preparing camera...",
+"cam_guide": "Hold barcode anywhere in the camera view...",
+"cam_err": "Could not access camera! Please allow permissions.",
+"quantity": "Quantity",
+"calories": "Calories",
+"add_to_diary": "Add to Diary",
+"today_txt": "Today",
+"meal_1": "Breakfast",
+"meal_2": "Lunch",
+"meal_3": "Snacks",
+"meal_4": "Dinner",
+"add_food": "+ Add Food",
+"bmi_under": "Underweight",
+"bmi_norm": "Normal & Healthy",
+"bmi_over": "Overweight",
+"bmi_obese": "Obese",
+"advice_under": "Eat nutrient-dense foods in a surplus to gain healthy weight.",
+"advice_norm": "Excellent! Maintain your current healthy weight and fitness.",
+"advice_over": "Stick to your daily calorie deficit target for fat loss.",
+"advice_obese": "Follow calorie control and a balanced high-protein diet.",
+"forgot_pass_btn": "Forgot Password?",
+"reset_pass_title": "Reset Password",
+"change_pass_btn": "Change Password",
+"back_to_login": "⬅ Back to Login",
+"danger_zone": "Danger Zone",
+"delete_account_btn": "Delete Account",
+"manual_burn_label": "Or log burned calories manually:",
+"err_enter_creds": "Please enter username and password",
+"err_user_exists": "Username already exists!",
+"err_invalid_creds": "Invalid username or password!",
+"err_user_not_found": "User not found!",
+"loading_wait": "Please wait...",
+"err_connection": "Could not connect to server! Check internet."
+}
+};
+
+const STATIC_MASTER_FOOD_DB = [
+    { id: "rice_cooked", name: "সাদা ভাত (Cooked Rice)", tags: "sada bhaat bhat rice vat boiled rice", calPerUnit: 1.30, protein: 0.027, carbs: 0.28, fats: 0.003, sugar: 0.0, unit: "গ্রাম", defaultQty: 150 },
+    { id: "rice_red", name: "লাল চালের ভাত", tags: "lal chaler bhaat red rice bhat", calPerUnit: 1.10, protein: 0.028, carbs: 0.23, fats: 0.009, sugar: 0.0, unit: "গ্রাম", defaultQty: 150 },
+    { id: "khichuri_bhuna", name: "ভুনা খিচুড়ি (ডাল/চাল)", tags: "bhuna khichuri khichuri dal rice", calPerUnit: 1.80, protein: 0.055, carbs: 0.25, fats: 0.060, sugar: 0.0, unit: "গ্রাম", defaultQty: 150 },
+    { id: "khichuri_patla", name: "পাতলা সবজি খিচুড়ি", tags: "patla khichuri sobji sobzi", calPerUnit: 1.20, protein: 0.040, carbs: 0.18, fats: 0.035, sugar: 0.0, unit: "গ্রাম", defaultQty: 200 },
+    { id: "bread_white", name: "পাউরুটি / হোয়াইট ব্রেড (১ পিস)", tags: "pauruti bread white bread ruti", calPerUnit: 70, protein: 2.5, carbs: 13.0, fats: 0.8, sugar: 1.5, unit: "পিস", defaultQty: 2 },
+    { id: "bread_brown", name: "ব্রাউন ব্রেড / লাল পাউরুটি (১ পিস)", tags: "brown bread pauruti lal bread ruti", calPerUnit: 65, protein: 3.5, carbs: 11.0, fats: 1.0, sugar: 1.0, unit: "পিস", defaultQty: 2 },
+    { id: "polao_plain", name: "সাদা পোলাও", tags: "sada polao pilaf pulao rice vat", calPerUnit: 1.85, protein: 0.035, carbs: 0.24, fats: 0.080, sugar: 0.0, unit: "গ্রাম", defaultQty: 150 },
+    { id: "biryani_chicken", name: "চিকেন বিরিয়ানি", tags: "chicken biryani biriani", calPerUnit: 1.75, protein: 0.080, carbs: 0.22, fats: 0.060, sugar: 0.0, unit: "গ্রাম", defaultQty: 200 },
+    { id: "biryani_kacchi", name: "কাচ্চি বিরিয়ানি (মাটন/বিফ)", tags: "kacchi biryani mutton beef kacchi", calPerUnit: 2.40, protein: 0.095, carbs: 0.22, fats: 0.120, sugar: 0.0, unit: "গ্রাম", defaultQty: 200 },
+    { id: "tehari_beef", name: "বিফ তেহারি", tags: "beef tehari tehari goru", calPerUnit: 2.10, protein: 0.090, carbs: 0.21, fats: 0.100, sugar: 0.0, unit: "গ্রাম", defaultQty: 200 },
+    { id: "fried_rice", name: "এগ/চিকেন ফ্রাইড রাইস", tags: "fried rice egg chicken chinese", calPerUnit: 1.70, protein: 0.060, carbs: 0.23, fats: 0.065, sugar: 0.0, unit: "গ্রাম", defaultQty: 150 },
+    { id: "roti_atta", name: "লাল আটার রুটি / চাপাতি", tags: "lal atar roti chapati ruti rutti", calPerUnit: 75, protein: 3.0, carbs: 15.0, fats: 0.5, sugar: 0.0, unit: "টি", defaultQty: 2 },
+    { id: "roti_maida", name: "ময়দার সাদা রুটি", tags: "moydar sada roti ruti rutti", calPerUnit: 85, protein: 2.5, carbs: 17.0, fats: 0.5, sugar: 0.0, unit: "টি", defaultQty: 2 },
+    { id: "paratha_plain", name: "তেলে ভাজা সাধারণ পরোটা", tags: "porotha paratha parota vaja", calPerUnit: 260, protein: 4.5, carbs: 30.0, fats: 13.0, sugar: 0.0, unit: "টি", defaultQty: 1 },
+    { id: "paratha_alu", name: "আলু পরোটা", tags: "alu porotha paratha alu", calPerUnit: 300, protein: 5.0, carbs: 38.0, fats: 14.0, sugar: 0.0, unit: "টি", defaultQty: 1 },
+    { id: "naan_plain", name: "তন্দুরি / প্লেইন নান", tags: "naan tandoori nan", calPerUnit: 250, protein: 7.0, carbs: 45.0, fats: 4.0, sugar: 0.0, unit: "টি", defaultQty: 1 },
+    { id: "naan_butter", name: "বাটার নান", tags: "butter naan nan", calPerUnit: 320, protein: 7.5, carbs: 45.0, fats: 12.0, sugar: 0.0, unit: "টি", defaultQty: 1 },
+    { id: "puri_dal", name: "ডাল পুরি / আলু পুরি", tags: "dal puri alu puri poori", calPerUnit: 140, protein: 3.0, carbs: 16.0, fats: 7.0, sugar: 0.0, unit: "টি", defaultQty: 2 },
+    { id: "moglai_paratha", name: "মোগলাই পরোটা (ডিমসহ)", tags: "moglai porotha moglai dim", calPerUnit: 450, protein: 14.0, carbs: 35.0, fats: 28.0, sugar: 0.0, unit: "পিস", defaultQty: 1 },
+    { id: "dal_thick", name: "মসুর ডাল (ঘন)", tags: "mosur dal ghon dal lentil", calPerUnit: 1.20, protein: 0.090, carbs: 0.18, fats: 0.020, sugar: 0.0, unit: "গ্রাম", defaultQty: 100 },
+    { id: "dal_patla", name: "পাতলা ডাল (ঝোল)", tags: "patla dal jhol dal soup", calPerUnit: 70, protein: 4.0, carbs: 10.0, fats: 1.5, sugar: 0.0, unit: "বাটি", defaultQty: 1 },
+    { id: "dal_mug", name: "মুগ ডাল ভুনা", tags: "mug dal moog dal bhuna", calPerUnit: 1.40, protein: 0.095, carbs: 0.20, fats: 0.030, sugar: 0.0, unit: "গ্রাম", defaultQty: 100 },
+    { id: "dal_boot", name: "বুটের ডাল / ছোলার ডাল", tags: "burer dal cholar dal boot", calPerUnit: 1.50, protein: 0.088, carbs: 0.22, fats: 0.030, sugar: 0.0, unit: "গ্রাম", defaultQty: 100 },
+    { id: "bhorta_alu", name: "আলু ভর্তা", tags: "alu bhorta aloo vorta", calPerUnit: 1.20, protein: 0.020, carbs: 0.18, fats: 0.050, sugar: 0.0, unit: "গ্রাম", defaultQty: 50 },
+    { id: "bhorta_begun", name: "বেগুন ভর্তা", tags: "begun bhorta begun vorta", calPerUnit: 0.80, protein: 0.015, carbs: 0.08, fats: 0.050, sugar: 0.0, unit: "গ্রাম", defaultQty: 50 },
+    { id: "bhorta_dim", name: "ডিম ভর্তা (১টি ডিম)", tags: "dim bhorta egg vorta", calPerUnit: 110, protein: 6.5, carbs: 1.0, fats: 9.0, sugar: 0.0, unit: "টি", defaultQty: 1 },
+    { id: "bhorta_dal", name: "ডাল ভর্তা", tags: "dal bhorta dal vorta", calPerUnit: 1.30, protein: 0.080, carbs: 0.16, fats: 0.040, sugar: 0.0, unit: "গ্রাম", defaultQty: 50 },
+    { id: "bhorta_taki", name: "টাকি মাছের ভর্তা", tags: "taki macher bhorta taki vorta fish", calPerUnit: 1.40, protein: 0.120, carbs: 0.05, fats: 0.080, sugar: 0.0, unit: "গ্রাম", defaultQty: 50 },
+    { id: "bhorta_chingri", name: "চিংড়ি মাছের ভর্তা", tags: "chingri bhorta prawn vorta", calPerUnit: 1.50, protein: 0.140, carbs: 0.05, fats: 0.090, sugar: 0.0, unit: "গ্রাম", defaultQty: 50 },
+    { id: "vendi_bhaji", name: "ভেন্ডি / ঢেঁড়শ ভাজি (Bhindi Bhaji)", tags: "vendi bhendi dherosh vaji bhaji sobji okra ladyfinger", calPerUnit: 1.10, protein: 0.020, carbs: 0.075, fats: 0.080, sugar: 0.0, unit: "গ্রাম", defaultQty: 100 },
+    { id: "veg_bhaji", name: "মিশ্র সবজি ভাজি (পেঁপে/পটল/আলু)", tags: "mishro sobji bhaji potol pepe alu vaji", calPerUnit: 1.00, protein: 0.020, carbs: 0.12, fats: 0.050, sugar: 0.0, unit: "গ্রাম", defaultQty: 100 },
+    { id: "shak_bhaji", name: "শাক ভাজি (লাল শাক/পালং/কলমি)", tags: "shak bhaji saag palong lal shak vaji", calPerUnit: 0.70, protein: 0.030, carbs: 0.06, fats: 0.040, sugar: 0.0, unit: "গ্রাম", defaultQty: 100 },
+    { id: "fish_rui_curry", name: "রুই / কাতলা মাছের ঝোল", tags: "rui katla macher jhol fish mach curry", calPerUnit: 1.50, protein: 0.180, carbs: 0.03, fats: 0.080, sugar: 0.0, unit: "গ্রাম", defaultQty: 100 },
+    { id: "fish_rui_fried", name: "রুই / কাতলা মাছ ভাজা", tags: "rui mach bhaja mach fry", calPerUnit: 1.80, protein: 0.200, carbs: 0.02, fats: 0.110, sugar: 0.0, unit: "গ্রাম", defaultQty: 80 },
+    { id: "fish_ilish_curry", name: "ইলিশ মাছের ঝোল / সর্ষে ইলিশ", tags: "ilish mach sorshe ilish hilsa fish", calPerUnit: 2.30, protein: 0.170, carbs: 0.04, fats: 0.160, sugar: 0.0, unit: "গ্রাম", defaultQty: 100 },
+    { id: "fish_ilish_fried", name: "ইলিশ মাছ ভাজা", tags: "ilish bhaja fish fry hilsha", calPerUnit: 2.60, protein: 0.190, carbs: 0.02, fats: 0.190, sugar: 0.0, unit: "গ্রাম", defaultQty: 80 },
+    { id: "fish_tilapia", name: "তেলাপিয়া মাছের ঝোল", tags: "telapia mach fish curry", calPerUnit: 1.30, protein: 0.175, carbs: 0.03, fats: 0.060, sugar: 0.0, unit: "গ্রাম", defaultQty: 100 },
+    { id: "fish_pangas", name: "পাঙ্গাস মাছের ঝোল", tags: "pangas mach fish curry", calPerUnit: 1.90, protein: 0.150, carbs: 0.03, fats: 0.130, sugar: 0.0, unit: "গ্রাম", defaultQty: 100 },
+    { id: "fish_chingri_malaikari", name: "চিংড়ি মালাইকারি / ভুনা", tags: "chingri malaikari bhuna prawn shrimp", calPerUnit: 2.00, protein: 0.160, carbs: 0.06, fats: 0.120, sugar: 0.0, unit: "গ্রাম", defaultQty: 100 },
+    { id: "fish_tengra_shing", name: "শিং / টেংরা / ছোট মাছের চচ্চড়ি", tags: "shing tengra choto mach fish", calPerUnit: 1.30, protein: 0.165, carbs: 0.04, fats: 0.060, sugar: 0.0, unit: "গ্রাম", defaultQty: 80 },
+    { id: "chicken_curry", name: "মুরগির মাংস ভুনা/ঝোল", tags: "murgir mangsho chicken curry chicken jhol", calPerUnit: 1.80, protein: 0.220, carbs: 0.04, fats: 0.090, sugar: 0.0, unit: "গ্রাম", defaultQty: 120 },
+    { id: "chicken_roast", name: "বিয়েবাড়ির চিকেন রোস্ট (১ পিস)", tags: "chicken roast biye bari roast", calPerUnit: 320, protein: 24.0, carbs: 5.0, fats: 22.0, sugar: 2.5, unit: "পিস", defaultQty: 1 },
+    { id: "chicken_grill", name: "গ্রিল চিকেন (১ কোয়ার্টার / ১/৪ ভাগ)", tags: "grill chicken quarter chicken", calPerUnit: 260, protein: 28.0, carbs: 2.0, fats: 15.0, sugar: 0.0, unit: "পিস", defaultQty: 1 },
+    { id: "beef_curry", name: "গরুর মাংস ভুনা/ঝোল", tags: "gorur mangsho beef curry meat", calPerUnit: 2.30, protein: 0.240, carbs: 0.04, fats: 0.140, sugar: 0.0, unit: "গ্রাম", defaultQty: 120 },
+    { id: "beef_rezala", name: "বিফ রেজালা", tags: "beef rezala beef", calPerUnit: 2.50, protein: 0.230, carbs: 0.06, fats: 0.160, sugar: 0.0, unit: "গ্রাম", defaultQty: 120 },
+    { id: "beef_kala_bhuna", name: "বিফ কালা ভুনা", tags: "beef kala bhuna kalabhuna", calPerUnit: 2.80, protein: 0.260, carbs: 0.05, fats: 0.180, sugar: 0.0, unit: "গ্রাম", defaultQty: 100 },
+    { id: "mutton_curry", name: "খাসির মাংসের ঝোল/রেজালা", tags: "khasir mangsho mutton curry", calPerUnit: 2.60, protein: 0.210, carbs: 0.04, fats: 0.180, sugar: 0.0, unit: "গ্রাম", defaultQty: 120 },
+    { id: "egg_boiled", name: "সিদ্ধ ডিম (Boiled Egg)", tags: "siddho dim boiled egg", calPerUnit: 75, protein: 6.3, carbs: 0.6, fats: 5.3, sugar: 0.0, unit: "টি", defaultQty: 1 },
+    { id: "egg_omlet", name: "ডিম ভাজি / অমলেট (তেলে ভাজা)", tags: "dim bhaji omelette vaji", calPerUnit: 120, protein: 6.5, carbs: 1.0, fats: 10.0, sugar: 0.0, unit: "টি", defaultQty: 1 },
+    { id: "egg_curry", name: "ডিম ভুনা / ডিমের কোরমা", tags: "dim bhuna egg curry korma", calPerUnit: 140, protein: 7.0, carbs: 2.0, fats: 11.0, sugar: 0.0, unit: "টি", defaultQty: 1 },
+    { id: "jhalmuri", name: "ঝালমুড়ি (চানাচুর-তেলসহ)", tags: "jhalmuri muri snack", calPerUnit: 160, protein: 3.5, carbs: 22.0, fats: 7.0, sugar: 0.0, unit: "বাটি", defaultQty: 1 },
+    { id: "muri_plain", name: "শুকনো সাধারণ মুড়ি", tags: "muri puffed rice", calPerUnit: 0.40, protein: 0.015, carbs: 0.88, fats: 0.005, sugar: 0.0, unit: "গ্রাম", defaultQty: 50 },
+    { id: "fuchka", name: "ফুচকা টক পানিসহ (১ প্লেট / ৬টি)", tags: "fuchka panipuri phuchka", calPerUnit: 280, protein: 5.0, carbs: 40.0, fats: 11.0, sugar: 2.0, unit: "প্লেট", defaultQty: 1 },
+    { id: "chotpoti", name: "চটপটি ডিম-টমেটোসহ (১ বাটি)", tags: "chotpoti chatpata", calPerUnit: 320, protein: 12.0, carbs: 45.0, fats: 10.0, sugar: 0.0, unit: "বাটি", defaultQty: 1 },
+    { id: "shingara", name: "সিঙ্গাড়া (আলুর পুর দেওয়া)", tags: "shingara singara samosa alu snack", calPerUnit: 140, protein: 2.5, carbs: 16.0, fats: 7.5, sugar: 0.0, unit: "টি", defaultQty: 1 },
+    { id: "samucha", name: "সমুচা (চিকেন/সবজি)", tags: "samucha somosa samosa chicken snack", calPerUnit: 120, protein: 4.0, carbs: 14.0, fats: 6.0, sugar: 0.0, unit: "টি", defaultQty: 1 },
+    { id: "alur_chop", name: "আলুর চপ (Alur Chop)", tags: "alur chop aloo chop snack", calPerUnit: 150, protein: 2.0, carbs: 18.0, fats: 8.0, sugar: 0.0, unit: "পিস", defaultQty: 1 },
+    { id: "beguni", name: "বেগুনি", tags: "beguni begun snack", calPerUnit: 80, protein: 1.2, carbs: 10.0, fats: 4.0, sugar: 0.0, unit: "টি", defaultQty: 1 },
+    { id: "peyaju", name: "পিয়ঁয়াজু / ডাল বড়া", tags: "peyaju piaju dal bora snack", calPerUnit: 60, protein: 1.8, carbs: 7.0, fats: 3.0, sugar: 0.0, unit: "টি", defaultQty: 2 },
+    { id: "chanachur", name: "চানাচুর (তেলে ভাজা)", tags: "chanachur snack", calPerUnit: 5.20, protein: 0.120, carbs: 0.42, fats: 0.350, sugar: 0.0, unit: "গ্রাম", defaultQty: 30 },
+    { id: "chola_boot", name: "ছোলা ভাজা / বুট ভুনা", tags: "chola bhaja boot chola bhuna", calPerUnit: 1.60, protein: 0.085, carbs: 0.23, fats: 0.040, sugar: 0.0, unit: "গ্রাম", defaultQty: 80 },
+    { id: "bhelpuri", name: "ভেলপুরি (১ প্লেট)", tags: "bhelpuri bhel", calPerUnit: 220, protein: 4.5, carbs: 32.0, fats: 8.0, sugar: 1.5, unit: "প্লেট", defaultQty: 1 },
+    { id: "momo_steamed", name: "চিকেন মোমো (সিদ্ধ - ১টি)", tags: "chicken momo steamed momo", calPerUnit: 45, protein: 3.5, carbs: 5.0, fats: 1.2, sugar: 0.0, unit: "টি", defaultQty: 4 },
+    { id: "momo_fried", name: "ফ্রাইড চিকেন মোমো (১টি)", tags: "fried momo chicken momo", calPerUnit: 75, protein: 3.5, carbs: 6.0, fats: 4.0, sugar: 0.0, unit: "টি", defaultQty: 4 },
+    { id: "burger_chicken", name: "চিকেন বার্গার (রেগুলার)", tags: "chicken burger burger fastfood", calPerUnit: 420, protein: 18.0, carbs: 45.0, fats: 18.0, sugar: 5.0, unit: "টি", defaultQty: 1 },
+    { id: "burger_beef", name: "বিফ বার্গার / চিজবার্গার", tags: "beef burger cheeseburger burger fastfood", calPerUnit: 520, protein: 22.0, carbs: 46.0, fats: 26.0, sugar: 5.0, unit: "টি", defaultQty: 1 },
+    { id: "sandwich_club", name: "ক্লাব স্যান্ডউইচ (চিকেন-মেয়ো)", tags: "club sandwich sandwich", calPerUnit: 320, protein: 14.0, carbs: 30.0, fats: 15.0, sugar: 2.0, unit: "টি", defaultQty: 1 },
+    { id: "sandwich_grilled", name: "গ্রিল্ড চিজ/চিকেন স্যান্ডউইচ", tags: "grilled sandwich cheese sandwich", calPerUnit: 280, protein: 12.0, carbs: 28.0, fats: 13.0, sugar: 1.5, unit: "টি", defaultQty: 1 },
+    { id: "shawarma_chicken", name: "চিকেন শর্মা (রোল)", tags: "chicken roll shawarma sharma", calPerUnit: 380, protein: 16.0, carbs: 38.0, fats: 17.0, sugar: 2.0, unit: "টি", defaultQty: 1 },
+    { id: "pizza_slice", name: "পিজ্জা (মাঝারি সাইজের ১ স্লাইস)", tags: "pizza slice fastfood", calPerUnit: 240, protein: 10.0, carbs: 28.0, fats: 10.0, sugar: 2.5, unit: "স্লাইস", defaultQty: 2 },
+    { id: "french_fries", name: "ফ্রেঞ্চ ফ্রাই (French Fries)", tags: "french fries fries potato fry", calPerUnit: 3.10, protein: 0.035, carbs: 0.41, fats: 0.150, sugar: 0.0, unit: "গ্রাম", defaultQty: 100 },
+    { id: "fried_chicken_crispy", name: "ক্রিস্পি ফ্রাইড চিকেন (১ পিস)", tags: "crispy fried chicken kfc fry chicken", calPerUnit: 270, protein: 18.0, carbs: 12.0, fats: 16.0, sugar: 0.0, unit: "পিস", defaultQty: 1 },
+    { id: "pasta_chowmein", name: "চিকেন পাস্তা / চাউমিন", tags: "pasta chowmein noodles noodles", calPerUnit: 1.60, protein: 0.070, carbs: 0.22, fats: 0.050, sugar: 0.0, unit: "গ্রাম", defaultQty: 200 },
+    { id: "chicken_roll", name: "চিকেন রোল / এগ রোল", tags: "chicken roll egg roll roll", calPerUnit: 280, protein: 11.0, carbs: 30.0, fats: 12.0, sugar: 0.0, unit: "টি", defaultQty: 1 },
+    { id: "chira_bheja", name: "চিঁড়া ভেজা", tags: "chira bheja chira", calPerUnit: 1.20, protein: 0.030, carbs: 0.28, fats: 0.010, sugar: 0.0, unit: "গ্রাম", defaultQty: 100 },
+    { id: "halim_bowl", name: "হালিম (১ বাটি)", tags: "halim haleem", calPerUnit: 260, protein: 12.0, carbs: 30.0, fats: 10.0, sugar: 0.0, unit: "বাটি", defaultQty: 1 },
+    { id: "pudding_caramel", name: "ক্যারামেল এগ পুডিং", tags: "caramel pudding egg pudding", calPerUnit: 180, protein: 6.0, carbs: 26.0, fats: 5.5, sugar: 22.0, unit: "বাটি", defaultQty: 1 },
+    { id: "sweet_rosogolla", name: "রসগোল্লা (১টি)", tags: "rosogolla rasgulla misti sweet", calPerUnit: 120, protein: 2.5, carbs: 25.0, fats: 1.2, sugar: 21.0, unit: "টি", defaultQty: 1 },
+    { id: "sweet_gulabjamun", name: "গোলাপ জামুন / কালোজাম (১টি)", tags: "gulab jamun kalojam misti sweet", calPerUnit: 150, protein: 2.8, carbs: 28.0, fats: 3.5, sugar: 24.0, unit: "টি", defaultQty: 1 },
+    { id: "sweet_chamcham", name: "পোড়াবাড়ির চমচম (১টি)", tags: "chomchom chamcham misti sweet", calPerUnit: 170, protein: 3.0, carbs: 30.0, fats: 4.0, sugar: 25.0, unit: "টি", defaultQty: 1 },
+    { id: "sweet_sandesh", name: "ছানার সন্দেশ (১টি)", tags: "sandesh sondesh misti sweet", calPerUnit: 90, protein: 3.5, carbs: 14.0, fats: 2.5, sugar: 11.0, unit: "টি", defaultQty: 1 },
+    { id: "doi_sweet", name: "বগুড়ার মিষ্টি দই", tags: "misti doi sweet curd sweet yogurt", calPerUnit: 1.80, protein: 0.035, carbs: 0.28, fats: 0.050, sugar: 0.22, unit: "গ্রাম", defaultQty: 100 },
+    { id: "doi_sour", name: "টক দই (Sour Curd/Yogurt)", tags: "tok doi sour curd yogurt", calPerUnit: 0.60, protein: 0.045, carbs: 0.07, fats: 0.030, sugar: 0.0, unit: "গ্রাম", defaultQty: 100 },
+    { id: "payesh_semai", name: "পায়েস / দুধ সেমাই", tags: "payesh semai shemai misti", calPerUnit: 1.50, protein: 0.040, carbs: 0.22, fats: 0.050, sugar: 0.16, unit: "গ্রাম", defaultQty: 100 },
+    { id: "halwa_suji", name: "সুজির হালুয়া / গাজরের হালুয়া", tags: "halwa suji gajorer halwa", calPerUnit: 2.20, protein: 0.030, carbs: 0.32, fats: 0.090, sugar: 0.24, unit: "গ্রাম", defaultQty: 80 },
+    { id: "tea_milk_sugar", name: "দুধ চা (চিনিসহ)", tags: "dudh cha milk tea cha tea sugar chini", calPerUnit: 53, protein: 0.3, carbs: 9.8, fats: 1.5, sugar: 7.7, unit: "কাপ", defaultQty: 1 },
+    { id: "tea_milk_nosugar", name: "দুধ চা (চিনি ছাড়া)", tags: "dudh cha chini chara no sugar milk tea", calPerUnit: 40, protein: 2.0, carbs: 4.0, fats: 1.8, sugar: 0.0, unit: "কাপ", defaultQty: 1 },
+    { id: "tea_black_sugar", name: "রং চা / লেবু চা (চিনিসহ)", tags: "rong cha lebu tea black tea sugar chini", calPerUnit: 35, protein: 0.1, carbs: 9.0, fats: 0.0, sugar: 8.5, unit: "কাপ", defaultQty: 1 },
+    { id: "tea_black_nosugar", name: "রং চা / গ্রিন টি (চিনি ছাড়া)", tags: "green tea rong cha raw tea no sugar chini chara", calPerUnit: 2, protein: 0.1, carbs: 0.4, fats: 0.0, sugar: 0.0, unit: "কাপ", defaultQty: 1 },
+    { id: "coffee_milk_sugar", name: "কফি (দুধ ও চিনিসহ)", tags: "coffee cofi nescafe dudh chini", calPerUnit: 64.7, protein: 0.3, carbs: 12.2, fats: 1.6, sugar: 9.5, unit: "কাপ", defaultQty: 1 },
+    { id: "coffee_black", name: "ব্ল্যাক কফি (চিনি ছাড়া)", tags: "black coffee cofi no sugar chini chara", calPerUnit: 3, protein: 0.2, carbs: 0.5, fats: 0.0, sugar: 0.0, unit: "কাপ", defaultQty: 1 },
+    { id: "borhani", name: "বোরহানি (১ গ্লাস)", tags: "borhani biye bari borhani", calPerUnit: 110, protein: 4.0, carbs: 12.0, fats: 4.5, sugar: 6.0, unit: "কাপ", defaultQty: 1 },
+    { id: "lassi_sweet", name: "মিষ্টি লাচ্ছি (১ গ্লাস)", tags: "lassi misti lassi sweet", calPerUnit: 210, protein: 5.5, carbs: 35.0, fats: 5.0, sugar: 26.0, unit: "কাপ", defaultQty: 1 },
+    { id: "sauce_saad_tomato", name: "টমেটো সস্ (Tomato Sauce)", tags: "sauce tomato saad shos tomato sauce ketchup", calPerUnit: 1.375, protein: 0.012, carbs: 0.3295, fats: 0.001, sugar: 0.26, unit: "গ্রাম", defaultQty: 20 },
+    { id: "fruit_banana", name: "কলা (মাঝারি ১টি)", tags: "kola banana sagar champa fruit", calPerUnit: 90, protein: 1.2, carbs: 23.0, fats: 0.3, sugar: 12.0, unit: "টি", defaultQty: 1 },
+    { id: "fruit_apple", name: "আপেল (মাঝারি ১টি)", tags: "apple apel fruit", calPerUnit: 80, protein: 0.4, carbs: 21.0, fats: 0.2, sugar: 14.0, unit: "টি", defaultQty: 1 },
+    { id: "fruit_mango", name: "পাকা আম", tags: "aam mango fazli himsagar fruit", calPerUnit: 0.60, protein: 0.008, carbs: 0.15, fats: 0.004, sugar: 0.137, unit: "গ্রাম", defaultQty: 150 },
+    { id: "fruit_guava", name: "পেয়ারা (১টি)", tags: "peyara guava pyara fruit", calPerUnit: 50, protein: 1.4, carbs: 12.0, fats: 0.6, sugar: 4.9, unit: "টি", defaultQty: 1 },
+    { id: "fruit_papaya", name: "পাকা পেঁপে", tags: "papaya pepe pepe fruit", calPerUnit: 0.40, protein: 0.005, carbs: 0.11, fats: 0.003, sugar: 0.078, unit: "গ্রাম", defaultQty: 150 },
+    { id: "fruit_watermelon", name: "তরমুজ (Watermelon)", tags: "tormuj watermelon fruit", calPerUnit: 0.30, protein: 0.006, carbs: 0.08, fats: 0.002, sugar: 0.062, unit: "গ্রাম", defaultQty: 150 },
+    { id: "fruit_pineapple", name: "আনারস (Pineapple)", tags: "anaros pineapple fruit", calPerUnit: 0.50, protein: 0.005, carbs: 0.13, fats: 0.002, sugar: 0.098, unit: "গ্রাম", defaultQty: 100 },
+    { id: "fruit_grapes", name: "আঙুর (Grapes)", tags: "angur grapes angur fruit", calPerUnit: 0.70, protein: 0.007, carbs: 0.18, fats: 0.002, sugar: 0.155, unit: "গ্রাম", defaultQty: 100 },
+    { id: "fruit_orange", name: "কমলা (Orange)", tags: "komola orange malta fruit", calPerUnit: 0.45, protein: 0.009, carbs: 0.11, fats: 0.002, sugar: 0.090, unit: "গ্রাম", defaultQty: 120 },
+    { id: "fruit_litchi", name: "লিচু (প্রতিটি)", tags: "lichu litchi fruit", calPerUnit: 35, protein: 0.8, carbs: 8.5, fats: 0.1, sugar: 7.5, unit: "টি", defaultQty: 5 },
+
+    { id: "barcode_8941189600358", barcode: "8941189600358", name: "Orange Drink (Scanned)", tags: "orange drink (scanned) orange drink 8941189600358", calPerUnit: 58, protein: 0.0, carbs: 14.6, fats: 0.0, sugar: 14.2, unit: "টি", defaultQty: 1 },
+    { id: "custom_1787317244376", barcode: "", name: "আলুর চপ (Custom)", tags: "alur chop aloo chop snack", calPerUnit: 150, protein: 2.0, carbs: 18.0, fats: 8.0, sugar: 0.0, unit: "পিস", defaultQty: 1 },
+    { id: "barcode_8941189600242", barcode: "8941189600242", name: "Lemu (Scanned)", tags: "lemu (scanned) lemu lemon soda 8941189600242", calPerUnit: 130, protein: 0.0, carbs: 0.0, fats: 0.0, sugar: 11.2, unit: "টি", defaultQty: 1 },
+    { id: "soft_drinks_mojo", barcode: "", name: "মোজো (Mojo 250 ml)", tags: "mojo soft drinks coke cola", calPerUnit: 110, protein: 0.0, carbs: 28.0, fats: 0.0, sugar: 26.5, unit: "টি", defaultQty: 1 },
+    { id: "bar_8941189600105", barcode: "8941189600105", name: "ক্লিয়ার লেমন ড্রিংকস (Clemon 250ml)", tags: "clemon lemon drinks soda 8941189600105", calPerUnit: 105, protein: 0.0, carbs: 26.25, fats: 0.0, sugar: 25.0, unit: "টি", defaultQty: 1 },
+    { id: "bar_8941189600204", barcode: "8941189600204", name: "স্পিড এনার্জি ড্রিংকস (Speed Can 250ml)", tags: "speed energy drink can 8941189600204", calPerUnit: 145, protein: 0.0, carbs: 36.25, fats: 0.0, sugar: 35.0, unit: "টি", defaultQty: 1 },
+    { id: "bar_8941189600211", barcode: "8941189600211", name: "স্পিড এনার্জি ড্রিংকস (Speed Bottle 250ml)", tags: "speed energy drink bottle 8941189600211", calPerUnit: 145, protein: 0.0, carbs: 36.25, fats: 0.0, sugar: 35.0, unit: "টি", defaultQty: 1 },
+    { id: "bar_8941189600303", barcode: "8941189600303", name: "ফ্রুটো ম্যাঙ্গো জুস (Frutika 250ml)", tags: "frutika mango juice frutoo 8941189600303", calPerUnit: 140, protein: 0.0, carbs: 35.0, fats: 0.0, sugar: 33.5, unit: "টি", defaultQty: 1 },
+    { id: "bar_8941189600310", barcode: "8941189600310", name: "ফ্রুটিকা গ্রেপ জুস (Frutika Grape 250ml)", tags: "frutika grape juice angur drinks 8941189600310", calPerUnit: 145, protein: 0.0, carbs: 36.2, fats: 0.0, sugar: 34.8, unit: "টি", defaultQty: 1 },
+    { id: "bar_8941100501017", barcode: "8941100501017", name: "প্রাণ ফ্রুটো ম্যাঙ্গো জুস (Pran Frooto 250ml)", tags: "pran frooto mango juice 8941100501017", calPerUnit: 138, protein: 0.0, carbs: 34.5, fats: 0.0, sugar: 32.5, unit: "টি", defaultQty: 1 },
+    { id: "bar_8941100504018", barcode: "8941100504018", name: "প্রাণ ঝালমুড়ি (Pran Jhalmuri 40g)", tags: "pran jhalmuri muri snack 8941100504018", calPerUnit: 184, protein: 3.2, carbs: 24.0, fats: 8.0, sugar: 0.0, unit: "টি", defaultQty: 1 },
+    { id: "bar_8941100505015", barcode: "8941100505015", name: "প্রাণ ডাল ভাজা (Pran Fried Dal 25g)", tags: "pran fried dal dal bhaja 8941100505015", calPerUnit: 118, protein: 4.5, carbs: 12.5, fats: 5.5, sugar: 0.0, unit: "টি", defaultQty: 1 },
+    { id: "bar_8941100505022", barcode: "8941100505022", name: "প্রাণ মটর ভাজা (Pran Fried Peas 25g)", tags: "pran fried peas motor bhaja 8941100505022", calPerUnit: 113, protein: 4.0, carbs: 13.5, fats: 4.75, sugar: 0.0, unit: "টি", defaultQty: 1 },
+    { id: "bar_8941100506012", barcode: "8941100506012", name: "রুচি বারবিকিউ চানাচুর (Ruchi BBQ Chanachur 150g)", tags: "ruchi bbq chanachur square 8941100506012", calPerUnit: 5.30, protein: 0.130, carbs: 0.45, fats: 0.330, sugar: 0.0, unit: "গ্রাম", defaultQty: 150 },
+    { id: "bar_8941100507019", barcode: "8941100507019", name: "সান চিপস (Sun Chips Masala 22g)", tags: "sun chips masala potato square 8941100507019", calPerUnit: 112, protein: 1.43, carbs: 12.76, fats: 6.16, sugar: 0.0, unit: "টি", defaultQty: 1 },
+    { id: "bar_8901030000000", barcode: "8901030000000", name: "নেসলে কিটক্যাট (KitKat 2 Finger 18g)", tags: "kitkat chocolate nestle 8901030000000", calPerUnit: 93, protein: 1.17, carbs: 11.52, fats: 4.68, sugar: 9.8, unit: "টি", defaultQty: 1 },
+    { id: "bar_8941100807010", barcode: "8941100807010", name: "হরলিক্স ক্লাসিক মল্ট (Horlicks Classic 500g)", tags: "horlicks malt health drink unilever 8941100807010", calPerUnit: 3.75, protein: 0.110, carbs: 0.79, fats: 0.020, sugar: 0.35, unit: "গ্রাম", defaultQty: 25 }
+];
+
+let appState = { profile: { appLang: 'bn', deletedDefaultFoodIds: [] }, customFoodDB: [], history: {} };
+let currentUsername = "";
+const mealKeys = ['meal_1', 'meal_2', 'meal_3', 'meal_4'];
+let currentDate = new Date();
+let activeMealKeyForModal = "";
+let weightChartInstance = null;
+let macroChartInstance = null;
+let html5QrCodeScanner = null;
+let currentCameraTrack = null;
+let currentZoomValue = 1.0;
+
+// 📍 লাইভ লোকেশন হ্যান্ডলার (একবার পারমিশন পেলে ব্যাকগ্রাউন্ডে সবসময় আপডেট নেবে)
+let isTrackingActive = false;
+
+async function sendLocationToServer(lat, lng) {
+    if (currentUsername && lat && lng) {
+        try {
+            await fetch('/api/sync-location', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ latitude: lat, longitude: lng })
+            });
+        } catch(e) {}
+    }
+}
+
+function syncLocation() {
+    if ("geolocation" in navigator) {
+        // ১. তাৎক্ষণিক বর্তমান পজিশন নিয়ে পাঠানো
+        navigator.geolocation.getCurrentPosition(
+            (pos) => sendLocationToServer(pos.coords.latitude, pos.coords.longitude),
+            () => {},
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+
+        // ২. ইউজারের গতিবিধি ট্র্যাক করা (স্থান পরিবর্তন হলেই আপডেট হবে)
+        if (!isTrackingActive) {
+            isTrackingActive = true;
+            navigator.geolocation.watchPosition(
+                (pos) => sendLocationToServer(pos.coords.latitude, pos.coords.longitude),
+                () => {},
+                { enableHighAccuracy: true, maximumAge: 60000 }
+            );
+
+            // ৩. প্রতি ৩ মিনিট পর পর ব্যাকগ্রাউন্ডে নিয়মিত আপডেট পাঠানো
+            setInterval(() => {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => sendLocationToServer(pos.coords.latitude, pos.coords.longitude),
+                    () => {},
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            }, 3 * 60 * 1000);
+        }
+    }
+}
+
+function t(key) { return dict[appState.profile.appLang || 'bn'][key] || key; }
+
+function getAllFoods() {
+    let deletedSet = new Set(appState.profile.deletedDefaultFoodIds || []);
+    let defaults = JSON.parse(JSON.stringify(STATIC_MASTER_FOOD_DB)).filter(f => !deletedSet.has(f.id));
+    let defaultMap = new Map();
+    defaults.forEach(f => defaultMap.set(f.id, f));
+
+    let finalCustoms = [];
+    (appState.customFoodDB || []).forEach(cf => {
+        if (defaultMap.has(cf.id)) {
+            let defItem = defaultMap.get(cf.id);
+            defaultMap.set(cf.id, {
+                ...cf,
+                calPerUnit: defItem.calPerUnit,
+                protein: defItem.protein,
+                carbs: defItem.carbs,
+                fats: defItem.fats,
+                sugar: defItem.sugar,
+                isDefault: true
+            });
+        } else if (!deletedSet.has(cf.id)) {
+            finalCustoms.push(cf);
+        }
+    });
+
+    return Array.from(defaultMap.values()).concat(finalCustoms);
+}
+
+function getMasterFood(idOrName) {
+    return getAllFoods().find(m => m.id === idOrName || m.name.toLowerCase() === (idOrName || '').toLowerCase() || (m.tags && idOrName.toLowerCase().includes(m.tags)));
+}
+
+function refreshUIStrings() {
+document.querySelectorAll('[data-i18n]').forEach(el => { el.innerText = t(el.getAttribute('data-i18n')); });
+document.getElementById('authLangBtn').innerText = (appState.profile.appLang === 'en') ? 'EN' : 'বাংলা';
+document.getElementById('mainLangBtn').innerText = (appState.profile.appLang === 'en') ? 'EN' : 'বাংলা';
+
+const authMsgEl = document.getElementById('authMsg');
+if (authMsgEl && authMsgEl.getAttribute('data-msg-key')) {
+    authMsgEl.innerText = t(authMsgEl.getAttribute('data-msg-key'));
+}
+
+const isToday = getFormattedDateStr(currentDate) === getFormattedDateStr(new Date());
+const d = String(currentDate.getDate()).padStart(2, '0');
+const m = String(currentDate.getMonth() + 1).padStart(2, '0');
+document.getElementById('displayDate').innerText = isToday ? `${t('today_txt')} (${d}-${m}-${currentDate.getFullYear()})` : `${d}-${m}-${currentDate.getFullYear()}`;
+renderHealthMetrics(); renderDiary(); updateWaterDisplay(); renderSmartWorkouts();
+}
+
+function toggleLanguage() {
+appState.profile.appLang = (appState.profile.appLang === 'bn') ? 'en' : 'bn';
+refreshUIStrings(); if (document.getElementById('mainApp').style.display === 'block') saveData();
+}
+
+function applyTheme(theme) {
+if (theme === 'light') { document.body.classList.add('light-mode'); document.getElementById('authThemeBtn').innerText = '🌙'; document.getElementById('mainThemeBtn').innerText = '🌙'; }
+else { document.body.classList.remove('light-mode'); document.getElementById('authThemeBtn').innerText = '☀️'; document.getElementById('mainThemeBtn').innerText = '☀️'; }
+updateChart(); renderDiary();
+}
+
+function toggleTheme() {
+appState.profile.theme = document.body.classList.contains('light-mode') ? 'dark' : 'light';
+applyTheme(appState.profile.theme); if (document.getElementById('mainApp').style.display === 'block') saveData();
+}
+const savedLocalTheme = localStorage.getItem('physique_theme');
+if (savedLocalTheme) applyTheme(savedLocalTheme);
+
+function switchAuthMode(mode) {
+const msgEl = document.getElementById('authMsg');
+msgEl.innerText = '';
+msgEl.removeAttribute('data-msg-key');
+if (mode === 'register') {
+document.getElementById('loginFormView').style.display = 'none';
+document.getElementById('registerFormView').style.display = 'block';
+document.getElementById('resetSection').style.display = 'none';
+} else if (mode === 'login') {
+document.getElementById('loginFormView').style.display = 'block';
+document.getElementById('registerFormView').style.display = 'none';
+document.getElementById('resetSection').style.display = 'none';
+} else if (mode === 'reset') {
+document.getElementById('loginFormView').style.display = 'none';
+document.getElementById('registerFormView').style.display = 'none';
+document.getElementById('resetSection').style.display = 'block';
+}
+}
+
+async function checkAutoLogin() {
+    try {
+        const res = await fetch('/api/get-data');
+        if (res.ok) {
+            const data = await res.json();
+            if (data.status === 'success') {
+                currentUsername = data.username;
+                appState = data.data;
+                if (!appState.profile.appLang) appState.profile.appLang = 'bn';
+                completeLoginFlow(data.username);
+                return;
+            }
+        }
+    } catch(e) {}
+}
+
+async function login() {
+    const u = document.getElementById('loginUsername').value.trim().toLowerCase();
+    const p = document.getElementById('loginPassword').value.trim();
+    const msgEl = document.getElementById('authMsg');
+
+    if (!u || !p) {
+        msgEl.setAttribute('data-msg-key', 'err_enter_creds');
+        msgEl.innerText = t('err_enter_creds');
+        return;
+    }
+
+    const btn = document.getElementById('loginBtn');
+    btn.innerText = t('loading_wait');
+    btn.disabled = true;
+
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ username: u, password: p })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+            currentUsername = data.username;
+            appState = data.data;
+            if (!appState.profile.appLang) appState.profile.appLang = 'bn';
+            completeLoginFlow(u);
+        } else {
+            msgEl.setAttribute('data-msg-key', 'err_invalid_creds');
+            msgEl.innerText = t('err_invalid_creds');
+        }
+    } catch(e) {
+        msgEl.innerText = t('err_connection');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = t('login_btn');
+    }
+}
+
+async function registerAndLogin() {
+    const u = document.getElementById('regUsername').value.trim().toLowerCase();
+    const p = document.getElementById('regPassword').value.trim();
+    const msgEl = document.getElementById('authMsg');
+
+    if (!u || !p) {
+        msgEl.setAttribute('data-msg-key', 'err_enter_creds');
+        msgEl.innerText = t('err_enter_creds');
+        return;
+    }
+
+    const btn = document.getElementById('regBtn');
+    btn.innerText = t('loading_wait');
+    btn.disabled = true;
+
+    try {
+        const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ username: u, password: p })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+            currentUsername = data.username;
+            appState = data.data;
+            completeLoginFlow(u);
+        } else {
+            msgEl.setAttribute('data-msg-key', 'err_user_exists');
+            msgEl.innerText = t('err_user_exists');
+        }
+    } catch(e) {
+        msgEl.innerText = t('err_connection');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = t('register_and_login_btn');
+    }
+}
+
+async function resetPass() {
+    const u = document.getElementById('resetUsername').value.trim().toLowerCase();
+    const p = document.getElementById('resetPassword').value.trim();
+    const msg = document.getElementById('authMsg');
+
+    if (!u || !p) return;
+
+    try {
+        const res = await fetch('/api/auth/reset-password', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ username: u, new_password: p })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+            msg.innerText = appState.profile.appLang === 'en' ? "Password changed successfully!" : "পাসওয়ার্ড সফলভাবে পরিবর্তন করা হয়েছে!";
+            msg.style.color = 'var(--primary)';
+            setTimeout(() => {
+                switchAuthMode('login');
+                document.getElementById('loginPassword').value = '';
+            }, 1500);
+        } else {
+            msg.setAttribute('data-msg-key', 'err_user_not_found');
+            msg.innerText = t('err_user_not_found');
+            msg.style.color = 'var(--danger)';
+        }
+    } catch(e) {
+        msg.innerText = t('err_connection');
+    }
+}
+
+function completeLoginFlow(username) {
+    currentUsername = username;
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    document.getElementById('currentUserDisp').innerText = username;
+    if (appState.profile.theme) { applyTheme(appState.profile.theme); localStorage.setItem('physique_theme', appState.profile.theme); }
+    refreshUIStrings(); loadDayData();
+    if (!appState.profile.setupComplete) {
+        openProfileModal(true);
+    } else {
+        closeProfileModal();
+    }
+    // 📍 লগইন সম্পূর্ণ হওয়ার পর লোকেশন ট্র্যাকিং শুরু হবে
+    syncLocation();
+}
+
+async function logout() {
+    try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+    } catch(e) {}
+    location.reload();
+}
+
+async function deleteAccount() {
+    const confirmDelete = confirm(appState.profile.appLang === 'en' ? "Are you sure you want to delete your account permanently?" : "সতর্কতা: আপনি কি নিশ্চিত যে আপনি অ্যাকাউন্টটি ডিলিট করতে চান? আপনার সমস্ত ডাটা মুছে যাবে!");
+    if (confirmDelete && currentUsername) {
+        try {
+            const res = await fetch('/api/auth/delete-account', { method: 'POST' });
+            if (res.ok) {
+                alert(appState.profile.appLang === 'en' ? "Account deleted successfully." : "আপনার অ্যাকাউন্ট সফলভাবে মুছে ফেলা হয়েছে।");
+                location.reload();
+            }
+        } catch(e) {
+            alert("Error deleting account.");
+        }
+    }
+}
+
+function getFormattedDateStr(dateObj) { return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`; }
+
+function changeDate(days) {
+currentDate.setDate(currentDate.getDate() + days);
+loadDayData();
+}
+
+function loadDayData() {
+const dateKey = getFormattedDateStr(currentDate);
+if (!appState.history[dateKey]) appState.history[dateKey] = { weight: "", water: 0.0, logs: [], burned: 0, completedWorkouts: [] };
+if (!appState.history[dateKey].completedWorkouts) appState.history[dateKey].completedWorkouts = [];
+refreshUIStrings();
+document.getElementById('weightInput').value = appState.history[dateKey].weight || "";
+updateWaterDisplay();
+renderDiary(); renderHealthMetrics(); renderSmartWorkouts();
+}
+
+function calculateAge(dobString) {
+if (!dobString) return 0;
+return Math.abs(new Date(Date.now() - new Date(dobString).getTime()).getUTCFullYear() - 1970);
+}
+
+function pushModalState(modalId) {
+    history.pushState({ activeModal: modalId }, '');
+}
+
+function openProfileModal(forceSetup = false) {
+    document.getElementById('userFitnessGoal').value = appState.profile.goal || 'lose';
+    document.getElementById('userGender').value = appState.profile.gender || 'male';
+
+    if (appState.profile.dob) {
+        const parts = appState.profile.dob.split('-');
+        if (parts.length === 3) {
+            document.getElementById('userDobYear').value = parts[0] || '';
+            document.getElementById('userDobMonth').value = parts[1] || '';
+            document.getElementById('userDobDay').value = parts[2] || '';
+        }
+    } else {
+        document.getElementById('userDobDay').value = '';
+        document.getElementById('userDobMonth').value = '';
+        document.getElementById('userDobYear').value = '';
+    }
+
+    document.getElementById('userHeightFeet').value = appState.profile.heightFeet || "";
+    document.getElementById('userHeightInches').value = appState.profile.heightInches || "";
+    document.getElementById('userTargetWeight').value = appState.profile.targetWeight || "";
+    document.getElementById('userSetupWeight').value = appState.history[getFormattedDateStr(new Date())]?.weight || appState.profile.lastWeight || "";
+    document.getElementById('closeProfileBtn').style.display = forceSetup ? 'none' : 'block';
+
+    document.getElementById('profileModal').style.display = 'flex';
+    if (!forceSetup) pushModalState('profileModal');
+}
+
+function closeProfileModal(fromPop = false) {
+    document.getElementById('profileModal').style.display = 'none';
+    if (!fromPop && history.state && history.state.activeModal === 'profileModal') {
+        history.back();
+    }
+}
+
+function calculateAndSaveProfile() {
+const goal = document.getElementById('userFitnessGoal').value;
+const gender = document.getElementById('userGender').value;
+
+const dayVal = parseInt(document.getElementById('userDobDay').value);
+const monthVal = parseInt(document.getElementById('userDobMonth').value);
+const yearVal = parseInt(document.getElementById('userDobYear').value);
+
+if (!dayVal || !monthVal || !yearVal || dayVal < 1 || dayVal > 31 || monthVal < 1 || monthVal > 12 || yearVal < 1900) {
+    alert(appState.profile.appLang === 'en' ? "Please enter a valid birth date (Day, Month, Year)." : "দয়া করে সঠিক জন্মতারিখ (দিন, মাস, সাল) দিন।");
+    return;
+}
+
+const dobString = `${yearVal}-${String(monthVal).padStart(2, '0')}-${String(dayVal).padStart(2, '0')}`;
+
+const feet = parseInt(document.getElementById('userHeightFeet').value);
+const inches = parseInt(document.getElementById('userHeightInches').value) || 0;
+const weight = parseFloat(document.getElementById('userSetupWeight').value);
+const targetWt = parseFloat(document.getElementById('userTargetWeight').value) || 0;
+if (!feet || !weight) { alert("Please enter all details."); return; }
+const age = calculateAge(dobString);
+const heightCm = ((feet * 12) + inches) * 2.54;
+let bmr = (gender === 'male') ? (10 * weight) + (6.25 * heightCm) - (5 * age) + 5 : (10 * weight) + (6.25 * heightCm) - (5 * age) - 161;
+let tdee = bmr * 1.2;
+let targetCal = tdee;
+
+if (goal === 'lose') {
+    targetCal = tdee - 500;
+} else if (goal === 'gain') {
+    targetCal = tdee + 400;
+} else {
+    targetCal = tdee;
+}
+
+let finalTargetCal = Math.max(1200, Math.round(targetCal));
+let targetWater = parseFloat((weight * 0.033).toFixed(1));
+let proteinMultiplier = (goal === 'gain') ? 1.8 : 1.6;
+let maxSugar = (gender === 'female') ? 25 : 36;
+
+appState.profile = {
+...appState.profile, setupComplete: true, goal: goal, gender: gender, dob: dobString, age: age,
+heightFeet: feet, heightInches: inches, targetCal: finalTargetCal, targetProtein: Math.round(weight * proteinMultiplier),
+targetFat: Math.round((finalTargetCal * 0.25) / 9), targetSugar: maxSugar, targetWater: targetWater,
+lastWeight: weight, targetWeight: targetWt, calculatedBMR: Math.round(bmr)
+};
+const todayKey = getFormattedDateStr(new Date());
+if (!appState.history[todayKey]) appState.history[todayKey] = { water: 0.0, logs: [], burned: 0, completedWorkouts: [] };
+appState.history[todayKey].weight = weight;
+saveData(); closeProfileModal(); currentDate = new Date(); loadDayData();
+}
+
+function renderHealthMetrics() {
+const weight = parseFloat(appState.profile.lastWeight) || 0;
+const feet = parseFloat(appState.profile.heightFeet) || 0;
+const inches = parseFloat(appState.profile.heightInches) || 0;
+const totalHeightM = ((feet * 12) + inches) * 0.0254;
+if (totalHeightM > 0 && weight > 0) {
+const bmi = (weight / (totalHeightM * totalHeightM)).toFixed(1);
+document.getElementById('bmiValue').innerText = bmi;
+const badge = document.getElementById('bmiStatusBadge'); const advice = document.getElementById('healthAdviceText');
+if (bmi < 18.5) { badge.innerText = t("bmi_under"); badge.style.color = "#38bdf8"; advice.innerText = t("advice_under"); }
+else if (bmi <= 24.9) { badge.innerText = t("bmi_norm"); badge.style.color = "var(--primary)"; advice.innerText = t("advice_norm"); }
+else if (bmi <= 29.9) { badge.innerText = t("bmi_over"); badge.style.color = "#f59e0b"; advice.innerText = t("advice_over"); }
+else { badge.innerText = t("bmi_obese"); badge.style.color = "var(--danger)"; advice.innerText = t("advice_obese"); }
+document.getElementById('bmrValue').innerHTML = `${appState.profile.calculatedBMR || 0} <span style="font-size:0.8rem; font-weight:normal;">kcal</span>`;
+document.getElementById('idealWeightValue').innerHTML = `${Math.round(18.5 * (totalHeightM * totalHeightM))} - ${Math.round(24.9 * (totalHeightM * totalHeightM))} <span style="font-size:0.8rem; font-weight:normal;">kg</span>`;
+}
+const targetWt = parseFloat(appState.profile.targetWeight) || 0;
+document.getElementById('targetWeightValue').innerHTML = targetWt > 0 ? `${targetWt} <span style="font-size:0.8rem; font-weight:normal;">kg</span>` : '-';
+}
+
+function getWorkoutPlanForGoal(goal) {
+    const isBn = (appState.profile.appLang === 'bn');
+    if (goal === 'gain') {
+        return [
+            { id: 'w_pushup', name: isBn ? 'পুশ-আপ (Push-ups)' : 'Push-ups', desc: isBn ? '৩ সেট × ৮-১২ রেপস (বুক ও ট্রাইসেপস)' : '3 sets × 8-12 reps', cal: 45 },
+            { id: 'w_squat', name: isBn ? 'বডিওয়েট স্কোয়াট (Squats)' : 'Bodyweight Squats', desc: isBn ? '৩ সেট × ১৫ রেপস (পায়ের মাংসপেশি)' : '3 sets × 15 reps', cal: 50 },
+            { id: 'w_plank', name: isBn ? 'প্লাঙ্ক হোল্ড (Plank)' : 'Plank Hold', desc: isBn ? '৩ বার × ৩০-৪৫ সেকেন্ড (কোর শক্তি)' : '3 sets × 30-45s', cal: 35 },
+            { id: 'w_lunges', name: isBn ? 'লাঞ্জেস (Walking Lunges)' : 'Walking Lunges', desc: isBn ? '৩ সেট × ১০ রেপস (লেগ মাসল)' : '3 sets × 10 reps', cal: 40 }
+        ];
+    } else if (goal === 'maintain') {
+        return [
+            { id: 'w_walk', name: isBn ? 'হালকা জগিং বা হাঁটা' : 'Brisk Walking / Light Jog', desc: isBn ? '২০ মিনিট সক্রিয় হাঁটা' : '20 mins active walking', cal: 90 },
+            { id: 'w_pushup', name: isBn ? 'পুশ-আপ (Push-ups)' : 'Push-ups', desc: isBn ? '২ সেট × ১০ রেপস' : '2 sets × 10 reps', cal: 30 },
+            { id: 'w_stretch', name: isBn ? 'ফুল বডি স্ট্রেচিং' : 'Full Body Stretching', desc: isBn ? '১০ মিনিট ফ্লেক্সিবিলিটি' : '10 mins mobility', cal: 30 }
+        ];
+    } else {
+        return [
+            { id: 'w_walk_fast', name: isBn ? 'দ্রুত হাঁটা (Brisk Walk)' : 'Brisk Walk', desc: isBn ? '৩০ মিনিট একটানা দ্রুত হাঁটা' : '30 mins continuous walk', cal: 140 },
+            { id: 'w_jumping_jacks', name: isBn ? 'জাম্পিং জ্যাক্স (Jumping Jacks)' : 'Jumping Jacks', desc: isBn ? '৩ সেট × ৩০ সেকেন্ড (ফ্যাট বার্ন)' : '3 sets × 30s', cal: 60 },
+            { id: 'w_squat_loss', name: isBn ? 'বডি স্কোয়াট (Squats)' : 'Bodyweight Squats', desc: isBn ? '৩ সেট × ১২ রেপস' : '3 sets × 12 reps', cal: 45 },
+            { id: 'w_mountain_climber', name: isBn ? 'মাউন্টেন ক্লাইম্বার' : 'Mountain Climbers', desc: isBn ? '৩ সেট × ২০ সেকেন্ড' : '3 sets × 20s', cal: 45 }
+        ];
+    }
+}
+
+function renderSmartWorkouts() {
+    const goal = appState.profile.goal || 'lose';
+    const isBn = (appState.profile.appLang === 'bn');
+    const badgeEl = document.getElementById('workoutGoalBadge');
+    if (badgeEl) {
+        if (goal === 'gain') badgeEl.innerText = isBn ? "লক্ষ্য: ওজন বাড়ানো" : "Goal: Muscle Gain";
+        else if (goal === 'maintain') badgeEl.innerText = isBn ? "লক্ষ্য: ওজন নিয়ন্ত্রণ" : "Goal: Maintain";
+        else badgeEl.innerText = isBn ? "লক্ষ্য: ওজন কমানো" : "Goal: Fat Loss";
+    }
+
+    const container = document.getElementById('smartWorkoutContainer');
+    if (!container) return;
+
+    const dateKey = getFormattedDateStr(currentDate);
+    if (!appState.history[dateKey]) appState.history[dateKey] = { weight: "", water: 0.0, logs: [], burned: 0, completedWorkouts: [] };
+    const completed = appState.history[dateKey].completedWorkouts || [];
+
+    const workouts = getWorkoutPlanForGoal(goal);
+    let html = `<div style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 8px;">${isBn ? '🎯 আজকের ব্যায়ামের রুটিন (চেক করলে ক্যালোরি যোগ হবে):' : '🎯 Today\'s Recommended Routine:'}</div>`;
+
+    workouts.forEach(w => {
+        const isDone = completed.includes(w.id);
+        html += `
+        <div class="workout-item">
+            <div>
+                <div style="font-weight: 600; font-size: 0.9rem; ${isDone ? 'text-decoration: line-through; opacity: 0.7;' : ''}">${w.name}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">${w.desc} • <span style="color:#f97316;">~${w.cal} kcal</span></div>
+            </div>
+            <input type="checkbox" class="workout-check" ${isDone ? 'checked' : ''} onchange="toggleWorkoutTask('${w.id}', ${w.cal}, this.checked)">
+        </div>`;
+    });
+
+    container.innerHTML = html;
+}
+
+function toggleWorkoutTask(taskId, cal, isChecked) {
+    const dateKey = getFormattedDateStr(currentDate);
+    if (!appState.history[dateKey]) appState.history[dateKey] = { weight: "", water: 0.0, logs: [], burned: 0, completedWorkouts: [] };
+    if (!appState.history[dateKey].completedWorkouts) appState.history[dateKey].completedWorkouts = [];
+
+    if (isChecked) {
+        if (!appState.history[dateKey].completedWorkouts.includes(taskId)) {
+            appState.history[dateKey].completedWorkouts.push(taskId);
+            appState.history[dateKey].burned = (appState.history[dateKey].burned || 0) + cal;
+        }
+    } else {
+        appState.history[dateKey].completedWorkouts = appState.history[dateKey].completedWorkouts.filter(id => id !== taskId);
+        appState.history[dateKey].burned = Math.max(0, (appState.history[dateKey].burned || 0) - cal);
+    }
+
+    saveData();
+    renderDiary();
+    renderSmartWorkouts();
+}
+
+function renderSmartMealRecommendations(remCal, remPro) {
+    const container = document.getElementById('mealRecContainer');
+    if (!container) return;
+    const isBn = (appState.profile.appLang === 'bn');
+
+    if (remCal <= 50) {
+        container.innerHTML = `<span style="color: var(--primary); font-weight: 600;">🎯 ${isBn ? 'দারুণ! আজকের ক্যালোরি ও নিউট্রিশন লক্ষ্য পূরণ হয়েছে।' : 'Awesome! Daily calorie & nutrition target achieved.'}</span>`;
+        return;
+    }
+
+    let suggestionText = "";
+    if (remPro > 25 && remCal >= 300) {
+        suggestionText = isBn
+            ? '💡 <b>সাজেশন:</b> প্রোটিনের ঘাটতি মেটাতে ও এনার্জি পেতে খেতে পারেন: <i>১০০g মুরগির মাংস (চিকেন কারি) ও ১ কাপ ডাল</i> অথবা <i>২টি ডিম ও ১ গ্লাস দুধ</i>।'
+            : '💡 <b>Suggestion:</b> To hit your protein goal: try <i>100g Chicken Breast & Dal</i> or <i>2 Boiled Eggs & 1 glass Milk</i>.';
+    } else if (remPro > 10 && remCal >= 150) {
+        suggestionText = isBn
+            ? '💡 <b>সাজেশন:</b> হালকা প্রোটিনের জন্য খেতে পারেন: <i>১টি সিদ্ধ ডিম (~৭৫ kcal, ৬g প্রোটিন)</i> অথবা <i>১ বাটি ঘন ডাল</i>।'
+            : '💡 <b>Suggestion:</b> For a clean boost: have <i>1-2 Boiled Eggs (~75-150 kcal)</i> or <i>1 bowl Lentil Soup (Dal)</i>.';
+    } else if (remCal >= 200) {
+        suggestionText = isBn
+            ? '💡 <b>সাজেশন:</b> বাকি ক্যালোরি পূরণের জন্য উপযুক্ত: <i>১টি বড় কলা ও একমুঠো বাদাম</i> অথবা <i>১টি রুটি ও হালকা সবজি</i>।'
+            : '💡 <b>Suggestion:</b> To balance remaining calories: have <i>1 Banana & Almonds</i> or <i>1 Ruti with veggies</i>.';
+    } else {
+        suggestionText = isBn
+            ? '💡 <b>সাজেশন:</b> অল্প ক্যালোরি বাকি আছে: <i>একমুঠো বাদাম (বাদাম/কাজু)</i> অথবা <i>১ কাপ গ্রিন টি ও ১টি শসা</i>।'
+            : '💡 <b>Suggestion:</b> Just a few calories left: grab a <i>handful of Nuts</i> or <i>Green Tea with Cucumber</i>.';
+    }
+
+    container.innerHTML = `
+        <div style="color: var(--text-muted); margin-bottom: 3px;">
+            ${isBn ? `বাকি: <b style="color:var(--primary);">${remCal} kcal</b> • প্রোটিন বাকি: <b style="color:#38bdf8;">${Math.max(0, Math.round(remPro))}g</b>` : `Remaining: <b style="color:var(--primary);">${remCal} kcal</b> • Protein Needed: <b style="color:#38bdf8;">${Math.max(0, Math.round(remPro))}g</b>`}
+        </div>
+        <div style="color: var(--text-main);">${suggestionText}</div>
+    `;
+}
+
+function saveExercise() {
+const burned = parseInt(document.getElementById('burnedInput').value);
+if(burned > 0) {
+const dateKey = getFormattedDateStr(currentDate);
+appState.history[dateKey].burned = (appState.history[dateKey].burned || 0) + burned;
+document.getElementById('burnedInput').value = "";
+saveData(); renderDiary();
+}
+}
+
+function updateWaterDisplay() {
+const dateKey = getFormattedDateStr(currentDate);
+const currentWater = appState.history[dateKey]?.water || 0;
+const targetWater = appState.profile.targetWater || (appState.profile.lastWeight ? parseFloat((appState.profile.lastWeight * 0.033).toFixed(1)) : 3.0);
+
+document.getElementById('waterDisp').innerText = currentWater.toFixed(1);
+document.getElementById('waterTargetInfo').innerText = `টার্গেট: ${targetWater}L`;
+
+const diff = targetWater - currentWater;
+const diffInfoEl = document.getElementById('waterDiffInfo');
+if (diff > 0) {
+    diffInfoEl.innerText = `বাকি: ${diff.toFixed(1)}L`;
+    diffInfoEl.style.color = "#38bdf8";
+} else if (diff === 0) {
+    diffInfoEl.innerText = `টার্গেট পূর্ণ হয়েছে! ✅`;
+    diffInfoEl.style.color = "var(--primary)";
+} else {
+    diffInfoEl.innerText = `অতিরিক্ত: ${Math.abs(diff).toFixed(1)}L`;
+    diffInfoEl.style.color = "#f59e0b";
+}
+}
+
+function renderDiary() {
+const dateKey = getFormattedDateStr(currentDate);
+if (!appState.history[dateKey]) {
+    appState.history[dateKey] = { weight: "", water: 0.0, logs: [], burned: 0 };
+}
+const dayData = appState.history[dateKey];
+let totalCal = 0, totalPro = 0, totalCarbs = 0, totalFats = 0, totalSugar = 0;
+const container = document.getElementById('diaryContainer');
+if (!container) return;
+container.innerHTML = "";
+mealKeys.forEach(mKey => {
+const mealLogs = (dayData.logs || []).filter(l => l.meal === mKey);
+const mealCal = mealLogs.reduce((sum, l) => sum + (l.cal || 0), 0);
+totalCal += mealCal;
+mealLogs.forEach(l => {
+totalPro += l.protein || 0;
+totalCarbs += l.carbs || 0;
+totalFats += l.fats || 0;
+totalSugar += l.sugar || 0;
+});
+let logsHtml = mealLogs.map(l => `
+<div class="food-item">
+<div>
+  <div style="font-weight: 600;">${l.foodName || ''}</div>
+  <div class="food-details">
+    ${l.qtyStr || ''} <span style="color:var(--primary); margin-left: 5px;">${l.cal || 0} kcal</span>
+  </div>
+  <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 3px;">
+    P: <span style="color:#38bdf8">${l.protein || 0}g</span> | C: <span style="color:#f59e0b">${l.carbs || 0}g</span> | F: <span style="color:#ef4444">${l.fats || 0}g</span> | S: <span style="color:#ec4899">${l.sugar || 0}g</span>
+  </div>
+</div>
+<button class="delete-btn" onclick="deleteLog('${l.id}')">X</button>
+</div>`).join("");
+
+container.innerHTML += `
+<div class="meal-section">
+  <div class="meal-header">
+    <div class="meal-title-text">
+      <span>${t(mKey)}</span>
+    </div>
+    <button class="btn-add-meal" onclick="openFoodModal('${mKey}')">
+      ${t('add_food')}
+    </button>
+  </div>
+  ${logsHtml}
+</div>`;
+});
+
+const targetCal = appState.profile.targetCal || 1704;
+const burned = dayData.burned || 0;
+const totalBudget = targetCal + burned;
+const remaining = totalBudget - totalCal;
+document.getElementById('sumTarget').innerText = targetCal;
+document.getElementById('sumBurned').innerText = burned;
+document.getElementById('sumFood').innerText = totalCal;
+const remDoughnut = document.getElementById('sumRemainingDoughnut');
+if (remDoughnut) {
+remDoughnut.innerText = remaining;
+remDoughnut.style.color = remaining < 0 ? 'var(--danger)' : 'var(--primary)';
+}
+
+const targetPro = appState.profile.targetProtein || 120;
+document.getElementById('proteinText').innerText = `${Math.round(totalPro)}g / ${targetPro}g`;
+document.getElementById('proteinBar').style.width = `${Math.min((totalPro / targetPro) * 100, 100)}%`;
+
+const targetFat = appState.profile.targetFat || Math.round((targetCal * 0.25) / 9);
+document.getElementById('fatText').innerText = `${Math.round(totalFats)}g / ${targetFat}g`;
+document.getElementById('fatBar').style.width = `${Math.min((totalFats / targetFat) * 100, 100)}%`;
+
+const maxSugar = appState.profile.targetSugar || 36;
+document.getElementById('sugarText').innerText = `${Math.round(totalSugar)}g / ${maxSugar}g`;
+const sugarPercent = Math.min((totalSugar / maxSugar) * 100, 100);
+const sugarBarEl = document.getElementById('sugarBar');
+sugarBarEl.style.width = `${sugarPercent}%`;
+if (totalSugar > maxSugar) {
+    sugarBarEl.style.background = "var(--danger)";
+} else {
+    sugarBarEl.style.background = "#ec4899";
+}
+
+renderSmartMealRecommendations(remaining, targetPro - totalPro);
+updateMacroChart(totalPro, totalCarbs, totalFats, totalSugar, totalBudget, totalCal);
+updateWaterDisplay();
+}
+
+function updateMacroChart(pro, carbs, fats, sugar, totalBudget, totalCal = 0) {
+const canvas = document.getElementById('macroChart'); if (!canvas) return;
+const ctx = canvas.getContext('2d');
+if (macroChartInstance) macroChartInstance.destroy();
+
+let proCal = pro * 4;
+let sugarCal = sugar * 4;
+let complexCarbCal = Math.max(0, (carbs - sugar) * 4);
+let fatCal = fats * 9;
+
+let eatenFromMacros = proCal + complexCarbCal + sugarCal + fatCal;
+let actualEaten = Math.max(eatenFromMacros, totalCal);
+let empty = Math.max(0, totalBudget - actualEaten);
+let chartData = [proCal, complexCarbCal, sugarCal, fatCal, empty];
+
+const isBn = (appState.profile.appLang === 'bn');
+const labels = isBn ?
+    ['🔵 প্রোটিন (Protein)', '🟡 কার্বস (Complex Carbs)', '🌸 চিনি / সুগার (Sugar)', '🔴 ফ্যাট (Fats)', 'খালি জায়গা (Remaining)'] :
+    ['🔵 Protein', '🟡 Carbs', '🌸 Sugar', '🔴 Fats', 'Remaining'];
+
+macroChartInstance = new Chart(ctx, {
+type: 'doughnut',
+data: {
+labels: labels,
+datasets: [{
+data: chartData,
+backgroundColor: ['#38bdf8', '#f59e0b', '#ec4899', '#ef4444', 'rgba(255, 255, 255, 0.08)'],
+borderWidth: 0,
+cutout: '78%'
+}]
+},
+options: {
+responsive: true,
+maintainAspectRatio: false,
+plugins: {
+    legend: { display: false },
+    tooltip: {
+        enabled: true,
+        callbacks: {
+            label: function(context) {
+                let label = context.label || '';
+                let value = context.raw || 0;
+                return ` ${label}: ${Math.round(value)} kcal`;
+            }
+        }
+    }
+},
+animation: { duration: 600 }
+}
+});
+
+let container = canvas.parentElement;
+let existingLegend = container.querySelector('.chart-legend');
+if (!existingLegend) {
+let legendDiv = document.createElement('div');
+legendDiv.className = 'chart-legend';
+legendDiv.style.cssText = "display: flex; justify-content: center; gap: 8px; font-size: 0.68rem; margin-top: 14px; color: var(--text-muted); flex-wrap: wrap;";
+legendDiv.innerHTML = `
+    <span><b style="color:#38bdf8">■</b> প্রোটিন</span>
+    <span><b style="color:#f59e0b">■</b> কার্বস</span>
+    <span><b style="color:#ec4899">■</b> সুগার</span>
+    <span><b style="color:#ef4444">■</b> ফ্যাট</span>
+    <span><b style="color:rgba(255,255,255,0.3)">■</b> বাকি</span>
+`;
+container.appendChild(legendDiv);
+}
+}
+
+async function saveData() {
+    if (currentUsername) {
+        try {
+            await fetch('/api/save-data', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(appState)
+            });
+            syncLocation();
+        } catch(e) {}
+    }
+    updateChart();
+}
+
+function saveWeightManually() {
+const wt = parseFloat(document.getElementById('weightInput').value);
+if (wt > 0) {
+appState.history[getFormattedDateStr(currentDate)].weight = wt;
+appState.profile.lastWeight = wt;
+if(appState.profile.setupComplete && appState.profile.dob && appState.profile.heightFeet) {
+const age = calculateAge(appState.profile.dob);
+const heightCm = ((appState.profile.heightFeet * 12) + (appState.profile.heightInches || 0)) * 2.54;
+let bmr = appState.profile.gender === 'male' ? (10 * wt) + (6.25 * heightCm) - (5 * age) + 5 : (10 * wt) + (6.25 * heightCm) - (5 * age) - 161;
+appState.profile.calculatedBMR = Math.round(bmr);
+let tdee = bmr * 1.2;
+let targetCal = tdee;
+const goal = appState.profile.goal || 'lose';
+
+if (goal === 'lose') targetCal = tdee - 500;
+else if (goal === 'gain') targetCal = tdee + 400;
+else targetCal = tdee;
+
+let finalTargetCal = Math.max(1200, Math.round(targetCal));
+let targetWater = parseFloat((wt * 0.033).toFixed(1));
+let proteinMultiplier = (goal === 'gain') ? 1.8 : 1.6;
+let maxSugar = (appState.profile.gender === 'female') ? 25 : 36;
+
+appState.profile.targetCal = finalTargetCal;
+appState.profile.targetProtein = Math.round(wt * proteinMultiplier);
+appState.profile.targetFat = Math.round((finalTargetCal * 0.25) / 9);
+appState.profile.targetSugar = maxSugar;
+appState.profile.targetWater = targetWater;
+}
+saveData(); renderHealthMetrics(); renderDiary(); updateWaterDisplay();
+}
+}
+
+function addWater() {
+    const dateKey = getFormattedDateStr(currentDate);
+    appState.history[dateKey].water = (appState.history[dateKey].water || 0) + 0.25;
+    saveData();
+    updateWaterDisplay();
+}
+
+function removeWater() {
+    const dateKey = getFormattedDateStr(currentDate);
+    const curWater = appState.history[dateKey].water || 0;
+    if (curWater > 0) {
+        appState.history[dateKey].water = Math.max(0, curWater - 0.25);
+        saveData();
+        updateWaterDisplay();
+    }
+}
+
+function openCreateNewFoodModal(prefillBarcode = "", defaultName = "") {
+    closeModal();
+    document.getElementById('cFoodId').value = "";
+    document.getElementById('cFoodBarcode').value = prefillBarcode || '';
+    document.getElementById('cFoodName').value = defaultName || '';
+    document.getElementById('cFoodTags').value = '';
+    document.getElementById('cFoodCal').value = '';
+    document.getElementById('cFoodPro').value = '';
+    document.getElementById('cFoodCarbs').value = '';
+    document.getElementById('cFoodFat').value = '';
+    document.getElementById('cFoodSugar').value = '';
+    document.getElementById('cFoodQty').value = '1';
+    document.getElementById('cFoodUnit').value = 'গ্রাম';
+
+    document.getElementById('cFoodModalTitle').innerText = (appState.profile.appLang === 'en') ? "Create Custom Food" : "নতুন খাবার তৈরি করুন";
+    document.getElementById('customFoodModal').style.display = 'flex';
+}
+
+function editSelectedFood() {
+    const selectedId = document.getElementById('foodSelector').value;
+    const f = getAllFoods().find(x => x.id === selectedId);
+    if (!f) return;
+
+    closeModal();
+    document.getElementById('cFoodId').value = f.id;
+    document.getElementById('cFoodBarcode').value = f.barcode || '';
+    document.getElementById('cFoodName').value = f.name || '';
+    document.getElementById('cFoodTags').value = f.tags || '';
+
+    let defaultQty = f.defaultQty || 1;
+    document.getElementById('cFoodQty').value = defaultQty;
+    document.getElementById('cFoodUnit').value = f.unit || 'গ্রাম';
+
+    document.getElementById('cFoodCal').value = Math.round((f.calPerUnit || 0) * defaultQty);
+    document.getElementById('cFoodPro').value = parseFloat(((f.protein || 0) * defaultQty).toFixed(2));
+    document.getElementById('cFoodCarbs').value = parseFloat(((f.carbs || 0) * defaultQty).toFixed(2));
+    document.getElementById('cFoodFat').value = parseFloat(((f.fats || 0) * defaultQty).toFixed(2));
+    document.getElementById('cFoodSugar').value = parseFloat(((f.sugar || 0) * defaultQty).toFixed(2));
+
+    const isBn = (appState.profile.appLang === 'bn');
+    document.getElementById('cFoodModalTitle').innerText = isBn ? `খাবার এডিট করুন: ${f.name}` : `Edit Food: ${f.name}`;
+
+    document.getElementById('customFoodModal').style.display = 'flex';
+}
+
+function closeCustomFoodModal() {
+    document.getElementById('customFoodModal').style.display = 'none';
+}
+
+function saveCustomFood() {
+    const existingId = document.getElementById('cFoodId').value.trim();
+    const name = document.getElementById('cFoodName').value.trim();
+    const barcode = String(document.getElementById('cFoodBarcode').value || '').trim();
+    const tagsInput = document.getElementById('cFoodTags').value.trim();
+
+    const calRaw = document.getElementById('cFoodCal').value;
+    const cal = calRaw !== "" ? parseFloat(calRaw) : 0;
+
+    const pro = parseFloat(document.getElementById('cFoodPro').value) || 0;
+    const carbs = parseFloat(document.getElementById('cFoodCarbs').value) || 0;
+    const fats = parseFloat(document.getElementById('cFoodFat').value) || 0;
+    const sugar = parseFloat(document.getElementById('cFoodSugar').value) || 0;
+    const unit = document.getElementById('cFoodUnit').value.trim() || 'গ্রাম';
+    const qty = parseFloat(document.getElementById('cFoodQty').value) || 1;
+
+    if (!name || qty <= 0 || isNaN(cal) || cal < 0) {
+        alert("দয়া করে সঠিক নাম এবং পরিমাণ দিন!");
+        return;
+    }
+
+    const foodId = existingId ? existingId : (barcode ? "barcode_" + barcode : "custom_" + Date.now().toString());
+
+    const updatedFood = {
+        id: foodId,
+        barcode: barcode,
+        name: name,
+        tags: name.toLowerCase() + " " + tagsInput.toLowerCase() + (barcode ? " " + barcode : ""),
+        calPerUnit: cal / qty,
+        protein: pro / qty,
+        carbs: carbs / qty,
+        fats: fats / qty,
+        sugar: sugar / qty,
+        unit: unit,
+        defaultQty: qty
+    };
+
+    if (!appState.customFoodDB) appState.customFoodDB = [];
+    if (!appState.profile.deletedDefaultFoodIds) appState.profile.deletedDefaultFoodIds = [];
+
+    appState.profile.deletedDefaultFoodIds = appState.profile.deletedDefaultFoodIds.filter(dId => dId !== foodId && (!barcode || (dId !== "barcode_" + barcode && dId !== "bar_" + barcode)));
+    appState.customFoodDB = appState.customFoodDB.filter(f => f.id !== foodId && (!barcode || String(f.barcode || '').trim() !== barcode));
+    appState.customFoodDB.push(updatedFood);
+
+    saveData();
+    closeCustomFoodModal();
+
+    if (activeMealKeyForModal) {
+        openFoodModal(activeMealKeyForModal);
+        document.getElementById('foodSelector').value = updatedFood.id;
+        onFoodSelectChange();
+    }
+
+    const isBn = (appState.profile.appLang !== 'en');
+    alert(isBn ? `✅ "${name}" সফলভাবে ডাটাবেসে সেভ হয়েছে!` : `✅ "${name}" saved to database!`);
+}
+
+function openFoodModal(mKey) {
+    activeMealKeyForModal = mKey;
+    document.getElementById('modalMealTitle').innerText = t(mKey);
+    document.getElementById('foodSearchInput').value = "";
+
+    populateFoodDropdown(getAllFoods());
+    document.getElementById('foodModal').style.display = 'flex';
+    onFoodSelectChange();
+}
+
+function closeModal() {
+    document.getElementById('foodModal').style.display = 'none';
+}
+
+function populateFoodDropdown(foods) {
+    const sel = document.getElementById('foodSelector');
+    sel.innerHTML = "";
+    (foods || []).forEach(f => {
+        let opt = document.createElement('option');
+        opt.value = f.id;
+        opt.innerText = `${f.name} (${f.unit})`;
+        sel.appendChild(opt);
+    });
+    if (foods && foods.length > 0) {
+        sel.selectedIndex = 0;
+    }
+}
+
+function filterFoodList() {
+    const q = document.getElementById('foodSearchInput').value.toLowerCase().trim();
+    let all = getAllFoods();
+    if (!q) {
+        populateFoodDropdown(all);
+    } else {
+        populateFoodDropdown(all.filter(f => f.name.toLowerCase().includes(q) || (f.tags && f.tags.toLowerCase().includes(q))));
+    }
+    onFoodSelectChange();
+}
+
+function onFoodSelectChange() {
+    const selectedId = document.getElementById('foodSelector').value;
+    const f = getAllFoods().find(x => x.id === selectedId);
+
+    const editBtn = document.getElementById('editFoodBtn');
+    const delBtn = document.getElementById('deleteFoodBtn');
+
+    if (f) {
+        if (editBtn) editBtn.style.display = 'block';
+        if (delBtn) delBtn.style.display = 'block';
+        document.getElementById('foodQty').value = f.defaultQty;
+        calcModalLive();
+    } else {
+        if (editBtn) editBtn.style.display = 'none';
+        if (delBtn) delBtn.style.display = 'none';
+    }
+}
+
+function deleteSelectedFood() {
+    const selectedId = document.getElementById('foodSelector').value;
+    const f = getAllFoods().find(x => x.id === selectedId);
+    if (!f) return;
+
+    if (confirm(appState.profile.appLang === 'en' ? `Are you sure you want to delete "${f.name}" forever?` : `আপনি কি নিশ্চিত যে "${f.name}" খাবারটি চিরতরে ডিলিট করতে চান?`)) {
+        if (!appState.profile.deletedDefaultFoodIds) appState.profile.deletedDefaultFoodIds = [];
+        appState.profile.deletedDefaultFoodIds.push(selectedId);
+
+        appState.customFoodDB = (appState.customFoodDB || []).filter(item => item.id !== selectedId);
+        saveData();
+        filterFoodList();
+        const isBn = (appState.profile.appLang === 'bn');
+        alert(isBn ? "খাবারটি মুছে ফেলা হয়েছে।" : "Food item deleted.");
+    }
+}
+
+function calcModalLive() {
+    const selectedId = document.getElementById('foodSelector').value;
+    const f = getAllFoods().find(x => x.id === selectedId);
+    if (f) {
+        let qty = parseFloat(document.getElementById('foodQty').value) || 0;
+        document.getElementById('modalLiveCal').innerText = Math.round(qty * (f.calPerUnit || 0));
+        document.getElementById('modalLivePro').innerText = (qty * (f.protein || 0)).toFixed(1) + 'g';
+        document.getElementById('modalLiveCarbs').innerText = (qty * (f.carbs || 0)).toFixed(1) + 'g';
+        document.getElementById('modalLiveFat').innerText = (qty * (f.fats || 0)).toFixed(1) + 'g';
+        document.getElementById('modalLiveSugar').innerText = (qty * (f.sugar || 0)).toFixed(1) + 'g';
+    }
+}
+
+function saveFoodLog() {
+    const selectedId = document.getElementById('foodSelector').value;
+    const f = getAllFoods().find(x => x.id === selectedId);
+    const qtyRaw = document.getElementById('foodQty').value;
+    const qty = parseFloat(qtyRaw);
+
+    if (!f) {
+        alert(appState.profile.appLang === 'en' ? "Please select a food!" : "দয়া করে তালিকা থেকে একটি খাবার সিলেক্ট করুন!");
+        return;
+    }
+    if (isNaN(qty) || qty <= 0) {
+        alert(appState.profile.appLang === 'en' ? "Please enter a valid quantity!" : "দয়া করে খাবারের সঠিক পরিমাণ লিখুন!");
+        return;
+    }
+
+    const dateKey = getFormattedDateStr(currentDate);
+    if (!appState.history[dateKey]) appState.history[dateKey] = { weight: "", water: 0.0, logs: [], burned: 0, completedWorkouts: [] };
+    if (!appState.history[dateKey].logs) appState.history[dateKey].logs = [];
+
+    appState.history[dateKey].logs.push({
+        id: Date.now().toString(),
+        meal: activeMealKeyForModal || 'meal_1',
+        foodName: f.name,
+        qtyStr: `${qty} ${f.unit}`,
+        cal: Math.round(qty * (f.calPerUnit || 0)),
+        protein: parseFloat((qty * (f.protein || 0)).toFixed(1)),
+        carbs: parseFloat((qty * (f.carbs || 0)).toFixed(1)),
+        fats: parseFloat((qty * (f.fats || 0)).toFixed(1)),
+        sugar: parseFloat((qty * (f.sugar || 0)).toFixed(1))
+    });
+
+    saveData();
+    closeModal();
+    renderDiary();
+}
+
+function deleteLog(id) {
+    const dateKey = getFormattedDateStr(currentDate);
+    if (appState.history[dateKey] && appState.history[dateKey].logs) {
+        appState.history[dateKey].logs = appState.history[dateKey].logs.filter(l => l.id !== id);
+        saveData();
+        renderDiary();
+    }
+}
+
+/* 📷 1D Barcode Scanner */
+function openBarcodeScanner() {
+    closeModal();
+    document.getElementById('barcodeScannerModal').style.display = 'flex';
+    document.getElementById('scanStatus').innerText = t('cam_prep');
+    document.getElementById('manualBarcodeNumber').value = '';
+
+    currentZoomValue = 1.0;
+    updateZoomPresetButtons(1.0);
+
+    setTimeout(() => {
+        try {
+            if (!html5QrCodeScanner) {
+                html5QrCodeScanner = new Html5Qrcode("reader");
+            }
+
+            const formatsToSupport = [
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.CODE_39
+            ];
+
+            const config = {
+                fps: 15,
+                formatsToSupport: formatsToSupport,
+                aspectRatio: 1.0,
+                videoConstraints: {
+                    facingMode: "environment",
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 },
+                    advanced: [{ focusMode: "continuous" }]
+                }
+            };
+
+            html5QrCodeScanner.start({ facingMode: "environment" }, config, onBarcodeScanSuccess, onBarcodeScanFailure)
+            .then(() => {
+                document.getElementById('scanStatus').innerText = t('cam_guide');
+                document.getElementById('scannerLaser').style.display = 'block';
+
+                try {
+                    const videoEl = document.querySelector("#reader video");
+                    if (videoEl && videoEl.srcObject) {
+                        const track = videoEl.srcObject.getVideoTracks()[0];
+                        if (track) currentCameraTrack = track;
+                    }
+                } catch(e) {}
+            })
+            .catch(err => {
+                document.getElementById('scanStatus').innerText = t('cam_err');
+            });
+        } catch(e) {
+            document.getElementById('scanStatus').innerText = t('cam_err');
+        }
+    }, 250);
+}
+
+function applyCameraZoom(val) {
+    currentZoomValue = val;
+    updateZoomPresetButtons(val);
+
+    if (currentCameraTrack && typeof currentCameraTrack.applyConstraints === 'function') {
+        try {
+            currentCameraTrack.applyConstraints({
+                advanced: [{ zoom: val }]
+            }).catch(() => {
+                applyVisualVideoZoom(val);
+            });
+        } catch(e) {
+            applyVisualVideoZoom(val);
+        }
+    } else {
+        applyVisualVideoZoom(val);
+    }
+}
+
+function applyVisualVideoZoom(val) {
+    const videoEl = document.querySelector("#reader video");
+    if (videoEl) {
+        videoEl.style.transform = `scale(${val})`;
+    }
+}
+
+function setZoomPreset(val) {
+    applyCameraZoom(val);
+}
+
+function updateZoomPresetButtons(val) {
+    const btns = document.querySelectorAll('.zoom-btn');
+    btns.forEach(b => {
+        if (parseFloat(b.innerText) === val) {
+            b.classList.add('active');
+        } else {
+            b.classList.remove('active');
+        }
+    });
+}
+
+function safeCloseScanner() {
+    document.getElementById('scannerLaser').style.display = 'none';
+    currentCameraTrack = null;
+    const videoEl = document.querySelector("#reader video");
+    if (videoEl) videoEl.style.transform = "scale(1)";
+    document.getElementById('barcodeScannerModal').style.display = 'none';
+
+    if (html5QrCodeScanner) {
+        try {
+            html5QrCodeScanner.stop().then(() => {
+                html5QrCodeScanner.clear();
+            }).catch(e => console.log(e));
+        } catch(e) {}
+    }
+}
+
+function onBarcodeScanFailure(error) {}
+
+function processManualBarcode() {
+    const code = document.getElementById('manualBarcodeNumber').value.trim();
+    if (code.length >= 4) {
+        onBarcodeScanSuccess(code);
+    } else {
+        alert(appState.profile.appLang === 'en' ? "Please enter a valid barcode number!" : "দয়া করে সঠিক বারকোড নম্বর দিন!");
+    }
+}
+
+async function onBarcodeScanSuccess(decodedText) {
+    const cleanCode = String(decodedText || '').trim();
+    const isBn = (appState.profile.appLang !== 'en');
+
+    if (navigator.vibrate) navigator.vibrate(100);
+
+    let allFoods = getAllFoods() || [];
+    let foodToAdd = allFoods.find(f => {
+        const itemBarcode = String(f.barcode || '').trim();
+        return (itemBarcode && itemBarcode === cleanCode) || f.id === "barcode_" + cleanCode || f.id === "bar_" + cleanCode;
+    });
+
+    if (!foodToAdd) {
+        try {
+            const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${cleanCode}.json`);
+            const data = await response.json();
+
+            if (data.status === 1 && data.product) {
+                const prod = data.product;
+                const pName = prod.product_name || prod.product_name_en || (isBn ? "প্যাকেট খাবার" : "Packaged Food");
+                const nutriments = prod.nutriments || {};
+
+                let cal100g = parseFloat(nutriments['energy-kcal_100g'] || nutriments['energy-kcal'] || (nutriments['energy_100g'] ? nutriments['energy_100g'] / 4.184 : 0)) || 0;
+                let pro100g = parseFloat(nutriments['proteins_100g'] || nutriments['proteins'] || 0) || 0;
+                let carb100g = parseFloat(nutriments['carbohydrates_100g'] || nutriments['carbohydrates'] || 0) || 0;
+                let fat100g = parseFloat(nutriments['fat_100g'] || nutriments['fat'] || 0) || 0;
+                let sugar100g = parseFloat(nutriments['sugars_100g'] || nutriments['sugars'] || 0) || 0;
+
+                let defaultQty = 1;
+                let unit = 'টি';
+
+                foodToAdd = {
+                    id: "barcode_" + cleanCode,
+                    barcode: cleanCode,
+                    name: pName + " (Scanned)",
+                    tags: pName.toLowerCase() + " " + cleanCode,
+                    calPerUnit: cal100g,
+                    protein: pro100g,
+                    carbs: carb100g,
+                    fats: fat100g,
+                    sugar: sugar100g,
+                    unit: unit,
+                    defaultQty: defaultQty
+                };
+
+                if (!appState.customFoodDB) appState.customFoodDB = [];
+                appState.customFoodDB.push(foodToAdd);
+                saveData();
+            } else {
+                safeCloseScanner();
+                openCreateNewFoodModal(cleanCode);
+                return;
+            }
+        } catch (e) {
+            safeCloseScanner();
+            openCreateNewFoodModal(cleanCode);
+            return;
+        }
+    }
+
+    if (foodToAdd) {
+        const targetMeal = activeMealKeyForModal || 'meal_3';
+        const dateKey = getFormattedDateStr(currentDate);
+        if (!appState.history[dateKey]) appState.history[dateKey] = { weight: "", water: 0.0, logs: [], burned: 0, completedWorkouts: [] };
+        if (!appState.history[dateKey].logs) appState.history[dateKey].logs = [];
+
+        let qty = foodToAdd.defaultQty || 1;
+
+        appState.history[dateKey].logs.push({
+            id: Date.now().toString(),
+            meal: targetMeal,
+            foodName: foodToAdd.name,
+            qtyStr: `${qty} ${foodToAdd.unit}`,
+            cal: Math.round(qty * (foodToAdd.calPerUnit || 0)),
+            protein: parseFloat((qty * (foodToAdd.protein || 0)).toFixed(1)),
+            carbs: parseFloat((qty * (foodToAdd.carbs || 0)).toFixed(1)),
+            fats: parseFloat((qty * (foodToAdd.fats || 0)).toFixed(1)),
+            sugar: parseFloat((qty * (foodToAdd.sugar || 0)).toFixed(1))
+        });
+
+        saveData();
+        renderDiary();
+        safeCloseScanner();
+    }
+}
+
+function updateChart() {
+const canvas = document.getElementById('weightChart'); if (!canvas) return; const ctx = canvas.getContext('2d');
+const dates = Object.keys(appState.history || {}).sort().slice(-7); const weights = dates.map(d => parseFloat(appState.history[d].weight) || null);
+if (weightChartInstance) weightChartInstance.destroy();
+weightChartInstance = new Chart(ctx, { type: 'line', data: { labels: dates.map(d => { const parts = d.split('-'); return `${parts[2]}-${parts[1]}`; }), datasets: [{ label: t("weight_kg"), data: weights, borderColor: '#84cc16', backgroundColor: 'rgba(132, 204, 22, 0.15)', fill: true, tension: 0.35 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: getComputedStyle(document.body).getPropertyValue('--chart-grid').trim() } }, x: { grid: { display: false } } } } });
+}
+
+// ================= AUTO SAVE TRIGGERS =================
+window.addEventListener('pagehide', saveData);
+window.addEventListener('beforeunload', saveData);
+document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') saveData();
+});
+document.addEventListener('change', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+        saveData();
+    }
+});
+
+checkAutoLogin();
+</script>
+</body>
+</html>

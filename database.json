@@ -1,0 +1,32 @@
+{
+  "anon": {
+    "password": "86d9b6f99b992dc57a58af4ce39faa2ab97b6f39bfcb63cf8e362d5516f43741",
+    "profile": {
+      "appLang": "bn",
+      "setupComplete": true,
+      "goal": "lose",
+      "gender": "male",
+      "dob": "2007-09-21",
+      "age": 18,
+      "heightFeet": 5,
+      "heightInches": 5,
+      "targetCal": 1704,
+      "targetProtein": 142,
+      "targetFat": 47,
+      "targetWater": 2.9,
+      "lastWeight": 89,
+      "targetWeight": 75,
+      "calculatedBMR": 1837
+    },
+    "customFoodDB": [],
+    "history": {
+      "2026-08-19": {
+        "burned": 0,
+        "logs": [],
+        "water": 0,
+        "weight": 89,
+        "completedWorkouts": []
+      }
+    }
+  }
+}
