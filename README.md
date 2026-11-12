@@ -47,4 +47,5 @@ A modern, mobile-first fitness and health tracking web application built with Py
 
 **Anon Khan**
 - Facebook: [Anon Khan](https://www.facebook.com/anonk3814)
+- Instagram: [Anon Khan](https://www.instagram.com/anonk3814)
 - GitHub: [@anonk38](https://github.com/anonk38)
