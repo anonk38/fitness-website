@@ -1,4 +1,4 @@
-# 🏋️‍♂️ FitPulse
+# ⚡ FitPulse
 
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-2.x-000000?style=for-the-badge&logo=flask&logoColor=white)
@@ -13,13 +13,13 @@ A modern, mobile-first fitness and health tracking web application built with Py
 
 ## 🎯 Core Features
 
-- 📱 **Smart Fitness Dashboard:** Real-time overview of your daily steps, burned calories, and overall fitness progress.
-- 🏃‍♂️ **Daily Walking Tracker:** Easily log and monitor your daily step counts and walking durations to hit movement goals.
-- 💪 **Bodyweight Exercise Log:** Keep a structured record of your daily workout routines, including reps and sets.
-- 🥗 **Calorie Counter:** Log daily meals and track your calorie intake to stay within your nutritional targets.
-- ⚖️ **Weight Management:** Record your weight regularly and track your fitness journey over time.
-- 💎 **Modern Responsive UI:** Clean, user-friendly interface designed with Tailwind CSS that works smoothly across mobile devices and desktops.
-- 📊 **Visual Analytics:** Intuitive data presentation for tracking habits and maintaining consistency.
+- 🧭 **Smart Fitness Dashboard:** Real-time overview of your daily steps, burned calories, and overall fitness progress.
+- 👟 **Daily Walking Tracker:** Easily log and monitor your daily step counts and walking durations to hit movement goals.
+- 🔥 **Bodyweight Exercise Log:** Keep a structured record of your daily workout routines, including reps and sets.
+- 🥑 **Calorie Counter:** Log daily meals and track your calorie intake to stay within your nutritional targets.
+- 📉 **Weight Management:** Record your weight regularly and track your fitness journey over time.
+- ✨ **Modern Responsive UI:** Clean, user-friendly interface designed with Tailwind CSS that works smoothly across mobile devices and desktops.
+- 📈 **Visual Analytics:** Intuitive data presentation for tracking habits and maintaining consistency.
 
 ---
 
