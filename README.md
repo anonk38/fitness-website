@@ -7,9 +7,7 @@
 
 A modern, mobile-first fitness and health tracking web application built with Python (Flask) and Tailwind CSS. Designed to help users maintain an active lifestyle by tracking daily walks, monitoring bodyweight exercises, counting calories, and managing weight progress seamlessly.
 
-🔗 **Live Website:** [your-app-link.pythonanywhere.com](https://your-app-link.pythonanywhere.com) *(Update with your actual link)*
-
----
+🔗 **Live Website:** https://anonk3814.pythonanywhere.com
 
 ## 🎯 Core Features
 
